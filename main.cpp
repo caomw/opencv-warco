@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include <string>
 
 #include <opencv2/opencv.hpp>
 #include "json/json.h"
@@ -31,7 +32,12 @@ int main(int argc, char** argv)
     }
 
     // Compute the features of all train images.
-    cv::Mat image = cv::imread(dataset["train"]["front"][0].asString());
+    std::string fname = dataset["train"]["front"][0].asString();
+    cv::Mat image = cv::imread(fname);
+    if(!image.data) {
+        std::cerr << "Failed to load test image " << fname << std::endl;
+        return 4;
+    }
     imshow("Foo", image);
     cv::waitKey(0);
 
