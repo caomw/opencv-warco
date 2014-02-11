@@ -19,5 +19,21 @@ endif()
 
 find_package(OpenCV REQUIRED)
 
-add_executable(warco features.cpp jsoncpp.cpp main.cpp)
+set(SRC
+    jsoncpp.cpp
+    json/json.h
+    json/json-forwards.h
+
+    cvutils.cpp
+    cvutils.hpp
+
+    covcorr.cpp
+    covcorr.hpp
+    features.cpp
+    features.hpp
+
+    main.cpp
+)
+
+add_executable(warco ${SRC})
 target_link_libraries(warco ${OpenCV_LIBS})

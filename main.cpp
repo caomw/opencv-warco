@@ -5,13 +5,15 @@
 #include <opencv2/opencv.hpp>
 #include "json/json.h"
 
+#include "covcorr.hpp"
 #include "features.hpp"
 
 int main(int argc, char** argv)
 {
     if(argc != 2) {
-        std::cerr << "Giff config file as argument!" << std::endl;
-        return 1;
+        std::cout << "No input file given, running unittests..." << std::endl;
+        warco::test_covcorr();
+        return 0;
     }
 
     Json::Value dataset;
@@ -43,6 +45,8 @@ int main(int argc, char** argv)
 
     auto feats = warco::mkfeats(image);
     warco::showfeats(feats);
+
+    std::cout << "corr " << warco::extract_corrs(feats)[0] << std::endl;
 
     return 0;
 }
