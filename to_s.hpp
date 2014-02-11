@@ -13,7 +13,7 @@ std::string to_s(const T& t)
 
 // Based upon http://stackoverflow.com/a/10168511
 template<>
-std::string to_s<cv::Mat>(const cv::Mat& m)
+inline std::string to_s<cv::Mat>(const cv::Mat& m)
 {
     std::ostringstream ss("Matrix: ");
 
