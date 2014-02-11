@@ -16,6 +16,18 @@ cv::Mat warco::eig_fn(const cv::Mat& m, std::function<double (double)> fn)
     return eigvecs * cv::Mat::diag(eigvals) * eigvecs.t();
 }
 
+cv::Mat warco::mkspd(const cv::Mat& m)
+{
+    return m.t() + m + m.rows * cv::Mat::eye(m.rows, m.cols, CV_32F);
+}
+
+cv::Mat warco::randspd(unsigned rows, unsigned cols)
+{
+    cv::Mat m(rows, cols, CV_32F);
+    cv::randu(m, 0.f, 1.f);
+    return mkspd(m);
+}
+
 void warco::assert_mat_almost_eq(const cv::Mat& actual, const cv::Mat& expected)
 {
     auto maxdiff = norm(actual - expected, cv::NORM_INF);

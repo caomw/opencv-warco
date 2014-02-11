@@ -29,6 +29,8 @@ set(SRC
 
     covcorr.cpp
     covcorr.hpp
+    dists.cpp
+    dists.hpp
     features.cpp
     features.hpp
 

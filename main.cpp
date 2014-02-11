@@ -6,6 +6,7 @@
 #include "json/json.h"
 
 #include "covcorr.hpp"
+#include "dists.hpp"
 #include "features.hpp"
 
 int main(int argc, char** argv)
@@ -13,6 +14,7 @@ int main(int argc, char** argv)
     if(argc != 2) {
         std::cout << "No input file given, running unittests..." << std::endl;
         warco::test_covcorr();
+        warco::test_dists();
         return 0;
     }
 
