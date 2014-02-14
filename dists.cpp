@@ -82,9 +82,48 @@ static void test_cbh()
     std::cout << "SUCCESS" << std::endl;
 }
 
+float warco::dist_geo(const cv::Mat& corrA, const cv::Mat& corrB)
+{
+    // TODO
+    // Weird, from both the paper and logic these should not involve logp_id,
+    // but from the code, they do.
+    cv::Mat lA = logp_id(corrA);
+    cv::Mat lB = logp_id(corrB);
+
+    cv::Mat lA_inv_sqrt = warco::eig_fn(lA, [](double lambda) {
+        return 1./sqrt(lambda);
+    });
+
+    cv::Mat thingy = logp_id(lA_inv_sqrt * lB * lA_inv_sqrt);
+
+    // NOTE: the sqrt is missing in tosato's code in Y_GSVM_Train_deterministic:47
+    //       (He doesn't seem to ever execute that part anyways)
+    return sqrt(trace(thingy*thingy)[0]);
+}
+
+static void test_geo()
+{
+    std::cout << "Geodesic distance... " << std::flush;
+    cv::Mat A = warco::randspd(4,4),
+            B = warco::randspd(4,4);
+
+    if(warco::dist_geo(A, A) > 1e-6) {
+        std::cerr << "Failed (d(A,A) is not close to 0)!" << std::endl;
+        throw std::runtime_error("Test assertion failed.");
+    }
+
+    if(std::abs(warco::dist_geo(A, B) - warco::dist_geo(B, A)) > 1e-6) {
+        std::cerr << "Failed (d(A,B) is not close to d(B,A))!" << std::endl;
+        throw std::runtime_error("Test assertion failed.");
+    }
+
+    std::cout << "SUCCESS" << std::endl;
+}
+
 void warco::test_dists()
 {
     test_euc();
     test_cbh();
+    test_geo();
 }
 
