@@ -153,7 +153,7 @@ std::vector<cv::Mat> warco::extract_corrs(const Features& feats)
 
     for(auto y = 0 ; y < 5 ; ++y)
         for(auto x = 0 ; x < 5 ; ++x)
-            *i++ = cov2corr(extract_cov(feats, 1+8*x, 1+8*y, 8, 8));
+            *i++ = cov2corr(extract_cov(feats, 1+8*x, 1+8*y, 16, 16));
 
     return nrvo;
 }
