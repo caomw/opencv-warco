@@ -27,6 +27,8 @@ static cv::Mat extract_cov(const warco::Features& feats, unsigned x, unsigned y,
     cv::Mat cov(nfeats, nfeats, CV_32FC1, 0.0f);
 
     // TODO: Use calcCovarMatrix?
+    // Doesn't seem to work in our use-case where
+    // the different dimensions of samples are spread across cvMats
 
     // TODO: Could use iterators?
     std::vector<const float*> lines(nfeats);
@@ -134,6 +136,11 @@ void warco::test_covcorr()
 {
     test_cov();
     test_cov2corr();
+}
+
+cv::Mat warco::extract_corr(const Features& feats, unsigned x, unsigned y, unsigned w, unsigned h)
+{
+    return cov2corr(extract_cov(feats, x, y, w, h));
 }
 
 std::vector<cv::Mat> warco::extract_corrs(const Features& feats)
