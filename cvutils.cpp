@@ -29,11 +29,12 @@ cv::Mat warco::randspd(unsigned rows, unsigned cols)
     return mkspd(m);
 }
 
-void warco::assert_mat_almost_eq(const cv::Mat& actual, const cv::Mat& expected)
+void warco::assert_mat_almost_eq(const cv::Mat& actual, const cv::Mat& expected, double reltol)
 {
     auto maxdiff = norm(actual - expected, cv::NORM_INF);
-    if(maxdiff > 1e-6) {
-        std::cerr << "FAILED (max diff: " << maxdiff << ")" << std::endl;
+    auto maxrel = maxdiff / norm(actual, cv::NORM_INF);
+    if(maxrel > reltol) {
+        std::cerr << "FAILED (abs diff: " << maxdiff << ", rel diff: " << maxrel << ")" << std::endl;
         std::cerr << "Expected:" << std::endl;
         std::cerr << expected << std::endl;
         std::cerr << "actual:" << std::endl;

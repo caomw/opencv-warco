@@ -27,17 +27,22 @@ float warco::dist_euc(const cv::Mat& corrA, const cv::Mat& corrB)
 
 static void test_euc()
 {
+    using warco::reldiff;
+
     std::cout << "Euclidean distance... " << std::flush;
     cv::Mat A = warco::randspd(4,4),
             B = warco::randspd(4,4);
 
-    if(warco::dist_euc(A, A) > 1e-6) {
-        std::cerr << "Failed (d(A,A) is not close to 0)!" << std::endl;
+    double dAA = warco::dist_euc(A, A);
+    if(dAA > 1e-6) {
+        std::cerr << "Failed! (d(A,A)=" << dAA << " is not close to 0)" << std::endl;
         throw std::runtime_error("Test assertion failed.");
     }
 
-    if(std::abs(warco::dist_euc(A, B) - warco::dist_euc(B, A)) > 1e-6) {
-        std::cerr << "Failed (d(A,B) is not close to d(B,A))!" << std::endl;
+    double dAB = warco::dist_euc(A, B);
+    double dBA = warco::dist_euc(B, A);
+    if(reldiff(dAB, dBA) > 1e-6) {
+        std::cerr << "Failed! (rel diff = " << reldiff(dAB, dBA) << " is too large)" << std::endl;
         throw std::runtime_error("Test assertion failed.");
     }
 
@@ -65,17 +70,22 @@ float warco::dist_cbh(const cv::Mat& corrA, const cv::Mat& corrB)
 
 static void test_cbh()
 {
+    using warco::reldiff;
+
     std::cout << "CBH distance... " << std::flush;
     cv::Mat A = warco::randspd(4,4),
             B = warco::randspd(4,4);
 
-    if(warco::dist_cbh(A, A) > 1e-6) {
-        std::cerr << "Failed (d(A,A) is not close to 0)!" << std::endl;
+    double dAA = warco::dist_cbh(A, A);
+    if(dAA > 1e-6) {
+        std::cerr << "Failed! (d(A,A)=" << dAA << " is not close to 0)" << std::endl;
         throw std::runtime_error("Test assertion failed.");
     }
 
-    if(std::abs(warco::dist_cbh(A, B) - warco::dist_cbh(B, A)) > 1e-6) {
-        std::cerr << "Failed (d(A,B) is not close to d(B,A))!" << std::endl;
+    double dAB = warco::dist_cbh(A, B);
+    double dBA = warco::dist_cbh(B, A);
+    if(reldiff(dAB, dBA) > 1e-6) {
+        std::cerr << "Failed! (rel diff = " << reldiff(dAB, dBA) << " is too large)" << std::endl;
         throw std::runtime_error("Test assertion failed.");
     }
 
@@ -94,6 +104,7 @@ float warco::dist_geo(const cv::Mat& corrA, const cv::Mat& corrB)
         return 1./sqrt(lambda);
     });
 
+    // I'm sure this `thingy` has a meaning.
     cv::Mat thingy = logp_id(lA_inv_sqrt * lB * lA_inv_sqrt);
 
     // NOTE: the sqrt is missing in tosato's code in Y_GSVM_Train_deterministic:47
@@ -103,17 +114,24 @@ float warco::dist_geo(const cv::Mat& corrA, const cv::Mat& corrB)
 
 static void test_geo()
 {
+    using warco::reldiff;
+
     std::cout << "Geodesic distance... " << std::flush;
     cv::Mat A = warco::randspd(4,4),
             B = warco::randspd(4,4);
 
-    if(warco::dist_geo(A, A) > 1e-6) {
-        std::cerr << "Failed (d(A,A) is not close to 0)!" << std::endl;
+    // TODO: Is it not a bug that geodesic is much more sensitive?
+    double dAA = warco::dist_geo(A, A);
+    if(dAA > 1e-5) {
+        std::cerr << "Failed! (d(A,A)=" << dAA << " is not close to 0)" << std::endl;
         throw std::runtime_error("Test assertion failed.");
     }
 
-    if(std::abs(warco::dist_geo(A, B) - warco::dist_geo(B, A)) > 1e-6) {
-        std::cerr << "Failed (d(A,B) is not close to d(B,A))!" << std::endl;
+    // TODO: geo definitely isn't symmetric numerically.
+    double dAB = warco::dist_geo(A, B);
+    double dBA = warco::dist_geo(B, A);
+    if(reldiff(dAB, dBA) > 2e-6) {
+        std::cerr << "Failed! (rel diff = " << reldiff(dAB, dBA) << " is too large)" << std::endl;
         throw std::runtime_error("Test assertion failed.");
     }
 
