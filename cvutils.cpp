@@ -16,9 +16,10 @@ cv::Mat warco::eig_fn(const cv::Mat& m, std::function<double (double)> fn)
     return eigvecs.t() * cv::Mat::diag(eigvals) * eigvecs;
 }
 
-cv::Mat warco::mkspd(const cv::Mat& m)
+cv::Mat warco::mkspd(cv::Mat m)
 {
-    return m.t() + m + m.rows * cv::Mat::eye(m.rows, m.cols, CV_32F);
+    completeSymm(m);
+    return m + m.rows * cv::Mat::eye(m.rows, m.cols, CV_32F);
 }
 
 cv::Mat warco::randspd(unsigned rows, unsigned cols)
