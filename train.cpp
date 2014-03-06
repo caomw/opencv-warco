@@ -8,20 +8,12 @@
 #include "covcorr.hpp"
 #include "dists.hpp"
 #include "features.hpp"
-#include "to_s.hpp"
+//#include "model.hpp"
 
 int main(int argc, char** argv)
 {
-    if(argc != 2 || warco::isulong(argv[1])) {
-        std::cout << "No input file given, running unittests..." << std::endl;
-
-        auto seed = argc == 2 ? strtoul(argv[1], nullptr, 0) : time(nullptr);
-        std::cout << "Seed is " << seed << std::endl;
-        cv::theRNG().state = seed;
-        srand(seed);
-
-        warco::test_covcorr();
-        warco::test_dists();
+    if(argc != 2) {
+        std::cout << "Please specify a configuration file which describes the dataset." << std::endl;
         return 0;
     }
 
@@ -56,6 +48,10 @@ int main(int argc, char** argv)
     warco::showfeats(feats);
 
     std::cout << "corr " << warco::extract_corrs(feats)[0] << std::endl;
+
+    //corrs = [corr for ...]
+    //labels = ...;
+    //auto model0(corrs, labels)
 
     return 0;
 }

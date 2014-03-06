@@ -17,13 +17,13 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     endif()
 endif()
 
-find_package(OpenCV REQUIRED)
+find_package(OpenCV REQUIRED core imgproc highgui)
+if(NOT OPENCV_CORE_FOUND OR NOT OPENCV_HIGHGUI_FOUND OR NOT OPENCV_IMGPROC_FOUND)
+    message(FATAL_ERROR "Couldn't find OpenCV!")
+endif()
+include_directories(${OpenCV_INCLUDE_DIRS})
 
-set(SRC
-    jsoncpp.cpp
-    json/json.h
-    json/json-forwards.h
-
+set(LIB_SRC
     cvutils.cpp
     cvutils.hpp
 
@@ -33,9 +33,18 @@ set(SRC
     dists.hpp
     features.cpp
     features.hpp
-
-    main.cpp
 )
 
-add_executable(warco ${SRC})
-target_link_libraries(warco ${OpenCV_LIBS})
+set(COMMON_SRC
+    jsoncpp.cpp
+    json/json.h
+    json/json-forwards.h
+)
+
+add_library(warco ${LIB_SRC})
+add_executable(warco-train train.cpp ${COMMON_SRC})
+add_executable(warco-pred pred.cpp ${COMMON_SRC})
+add_executable(warco-utest utest.cpp ${COMMON_SRC})
+target_link_libraries(warco-train warco ${OpenCV_LIBS})
+target_link_libraries(warco-pred warco ${OpenCV_LIBS})
+target_link_libraries(warco-utest warco ${OpenCV_LIBS})
