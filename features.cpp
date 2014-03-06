@@ -5,6 +5,7 @@
 #ifndef NDEBUG
 #include <iostream>
 #include "to_s.hpp"
+using warco::to_s;
 #endif
 
 static void mkDooG(const cv::Mat& l, cv::Mat* out)

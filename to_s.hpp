@@ -3,6 +3,8 @@
 #include <string>
 #include <sstream>
 
+namespace warco {
+
 template<typename T>
 std::string to_s(const T& t)
 {
@@ -44,4 +46,6 @@ inline std::string to_s<cv::Mat>(const cv::Mat& m)
 
     return ss.str();
 }
+
+} // namespace warco
 
