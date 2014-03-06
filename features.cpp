@@ -2,6 +2,9 @@
 
 #include <opencv2/opencv.hpp>
 
+// For CV_BGR2Lab, at least in opencv trunk.
+#include <opencv2/imgproc/types_c.h>
+
 #ifndef NDEBUG
 #include <iostream>
 #include "to_s.hpp"
