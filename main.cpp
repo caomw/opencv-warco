@@ -8,11 +8,18 @@
 #include "covcorr.hpp"
 #include "dists.hpp"
 #include "features.hpp"
+#include "to_s.hpp"
 
 int main(int argc, char** argv)
 {
-    if(argc != 2) {
+    if(argc != 2 || warco::isulong(argv[1])) {
         std::cout << "No input file given, running unittests..." << std::endl;
+
+        auto seed = argc == 2 ? strtoul(argv[1], nullptr, 0) : time(nullptr);
+        std::cout << "Seed is " << seed << std::endl;
+        cv::theRNG().state = seed;
+        srand(seed);
+
         warco::test_covcorr();
         warco::test_dists();
         return 0;

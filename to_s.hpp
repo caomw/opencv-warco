@@ -47,5 +47,13 @@ inline std::string to_s<cv::Mat>(const cv::Mat& m)
     return ss.str();
 }
 
+inline bool isulong(const std::string& s)
+{
+    char* end;
+    strtoull(s.c_str(), &end, 0);
+
+    return !s.empty() && *end == 0;
+}
+
 } // namespace warco
 
