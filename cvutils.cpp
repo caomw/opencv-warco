@@ -4,8 +4,7 @@
 
 cv::Mat warco::eig_fn(const cv::Mat& m, std::function<double (double)> fn)
 {
-    cv::Mat eigvals;
-    cv::Mat eigvecs;
+    cv::Mat eigvals, eigvecs;
 
     if(! eigen(m, eigvals, eigvecs))
         throw std::runtime_error("Cannot eigen-decompose matrix.");
@@ -13,7 +12,8 @@ cv::Mat warco::eig_fn(const cv::Mat& m, std::function<double (double)> fn)
     for(auto eig = eigvals.begin<float>() ; eig != eigvals.end<float>() ; ++eig)
         *eig = fn(*eig);
 
-    return eigvecs * cv::Mat::diag(eigvals) * eigvecs.t();
+    // Notice it's the other way around here as in matlab/numpy!
+    return eigvecs.t() * cv::Mat::diag(eigvals) * eigvecs;
 }
 
 cv::Mat warco::mkspd(const cv::Mat& m)
