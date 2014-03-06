@@ -42,7 +42,7 @@ static void test_euc()
     double dAB = warco::dist_euc(A, B);
     double dBA = warco::dist_euc(B, A);
     if(reldiff(dAB, dBA) > 1e-6) {
-        std::cerr << "Failed! (rel diff = " << reldiff(dAB, dBA) << " is too large)" << std::endl;
+        std::cerr << "Failed! (rel diff (dAB, dBA) = " << reldiff(dAB, dBA) << " is too large)" << std::endl;
         throw std::runtime_error("Test assertion failed.");
     }
 
@@ -85,7 +85,7 @@ static void test_cbh()
     double dAB = warco::dist_cbh(A, B);
     double dBA = warco::dist_cbh(B, A);
     if(reldiff(dAB, dBA) > 1e-6) {
-        std::cerr << "Failed! (rel diff = " << reldiff(dAB, dBA) << " is too large)" << std::endl;
+        std::cerr << "Failed! (rel diff (dAB, dBA) = " << reldiff(dAB, dBA) << " is too large)" << std::endl;
         throw std::runtime_error("Test assertion failed.");
     }
 
@@ -130,8 +130,8 @@ static void test_geo()
     // TODO: geo definitely isn't symmetric numerically.
     double dAB = warco::dist_geo(A, B);
     double dBA = warco::dist_geo(B, A);
-    if(reldiff(dAB, dBA) > 2e-6) {
-        std::cerr << "Failed! (rel diff = " << reldiff(dAB, dBA) << " is too large)" << std::endl;
+    if(reldiff(dAB, dBA) > 1e-5) {
+        std::cerr << "Failed! (rel diff (dAB, dBA) = " << reldiff(dAB, dBA) << " is too large)" << std::endl;
         throw std::runtime_error("Test assertion failed.");
     }
 
