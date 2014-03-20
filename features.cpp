@@ -6,8 +6,8 @@
 #include <opencv2/imgproc/types_c.h>
 
 #ifndef NDEBUG
-#include <iostream>
-#include "to_s.hpp"
+#  include <iostream>
+#  include "to_s.hpp"
 using warco::to_s;
 #endif
 

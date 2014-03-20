@@ -1,0 +1,227 @@
+#include "model.hpp"
+
+#include <cmath>
+#ifndef NDEBUG
+#  include <iostream>
+#endif
+
+#include <opencv2/opencv.hpp>
+
+#include "libsvm/svm.h"
+#include "dists.hpp"
+
+void warco::test_model()
+{
+    // TODO - how can I actually test this !?
+    // Anyways, already tested in prototype^^
+}
+
+warco::PatchModel::PatchModel()
+    : _svm(nullptr)
+    , _prob(nullptr)
+    , _mean(0.0)
+{ }
+
+warco::PatchModel::~PatchModel()
+{
+    this->free_svm();
+}
+
+void warco::PatchModel::free_svm()
+{
+    if(_svm) svm_free_and_destroy_model(&_svm);
+
+    if(_prob) {
+        delete[] _prob->x[0];
+        delete[] _prob->x;
+        delete _prob;
+        _prob = nullptr;
+    }
+}
+
+void warco::PatchModel::add_sample(const cv::Mat& corr, unsigned label)
+{
+    _corrs.push_back(corr);
+    _lbls.push_back(static_cast<double>(label));
+}
+
+double warco::PatchModel::train()
+{
+    this->free_svm();
+
+    // 1. Compute distance matrix
+    // 2. train SVM
+
+    auto N = _corrs.size();
+
+    _prob = new svm_problem;
+    _prob->l = N;
+    _prob->y = &_lbls[0];
+
+    // Construct what will hold the distance/kernel "matrix"
+    _prob->x = new svm_node*[N];
+    auto* xes = new svm_node[N*(N+2)]; // TODO: Could halve this, but meh!
+    for(unsigned i = 0 ; i < N ; ++i) {
+        _prob->x[i] = xes + i*(N+2);
+
+        // Make the first entry be the "sample id" as requested in
+        // the "precomputed kernel" section of the readme.
+        _prob->x[i][0].index = 0;
+        _prob->x[i][0].value = 1+i;
+
+        // Make the last of each row be -1 as requested by the API.
+        _prob->x[i][N+1].index = -1;
+    }
+
+    // Compute the Gram matrix first, but compute the mean in the same run,
+    // we'll need it to turn the matrix into a mercer kernel next.
+    _mean = 0.0;
+    for(unsigned i = 0 ; i < N ; ++i) {
+        for(unsigned j = 0 ; j < i ; ++j) {
+            double d = dist_cbh(_corrs[i], _corrs[j]);
+            _prob->x[i][1+j].index = 1+j;
+            _prob->x[j][1+i].index = 1+i;
+            _prob->x[i][1+j].value = d;
+            _prob->x[j][1+i].value = d;
+            _mean += d;
+        }
+        // The diagonal is outside of above loop to avoid
+        // counting it twice (in the mean, mainly).
+        double d = dist_cbh(_corrs[i], _corrs[i]);
+        _prob->x[i][1+i].index = 1+i;
+        _prob->x[i][1+i].value = d;
+        _mean += d;
+    }
+
+    _mean /= (N*(N+1)/2);
+
+    // Turn it into a mercer kernel next.
+    for(unsigned i = 0 ; i < N ; ++i) {
+        for(unsigned j = 0 ; j < i ; ++j) {
+            double k = std::exp(-_prob->x[i][1+j].value / _mean);
+            _prob->x[i][1+j].value = k;
+            _prob->x[j][1+i].value = k;
+        }
+        // Same story about the diagonal here.
+        _prob->x[i][1+i].value = std::exp(-_prob->x[i][1+i].value / _mean);
+    }
+
+    // Now setup the SVM's parameters to use above kernel.
+
+    svm_parameter param = {0};
+    param.svm_type = C_SVC;
+    param.kernel_type = PRECOMPUTED;
+    // degree, gamma, coef0 unused.
+
+    // Training settings
+    param.cache_size = 1; // MB (for kernels, needs to be >= 0 even if unused.)
+    param.eps = 0.001; // "(we usually use 0.00001 in nu-SVC, 0.001 in others)."
+    param.C = 0.1; // TODO: need to cross-validate this.
+    // C_SVC only `nr_weight`, `weight_label` and `weight` unused.
+    // NU_SV? only `nu`
+    // EPSILON_SVR: `p`
+    param.shrinking = int(true);
+    param.probability = int(true);
+
+    // Checking for correctness of above settings.
+    if(const char* err = svm_check_parameter(_prob, &param)) {
+        throw std::runtime_error(err);
+    }
+
+    // *NOTE* Because svm_model contains pointers to svm_problem, you can
+    // not free the memory used by svm_problem if you are still using the
+    // svm_model produced by svm_train().
+
+    _svm = svm_train(_prob, &param);
+
+#ifndef NDEBUG
+    if(getenv("WARCO_DEBUG")) {
+        std::cout << "#data: " << _prob->l << std::endl;
+        std::cout << "#SV: " << _svm->l << std::endl;
+    }
+#endif
+
+    // TODO: return trainingset accuracy.
+    return 0.0;
+}
+
+void warco::PatchModel::save(const char* name) const
+{
+    //Json::Value model;
+    //int svm_get_nr_sv(const struct svm_model *model)
+    //   This function gives the number of total support vector.
+    //void svm_get_sv_indices(const struct svm_model *model, int *sv_indices)
+    //   This function outputs indices of support vectors into an array called sv_indices.
+    //   The size of sv_indices is the number of support vectors and can be obtained by calling svm_get_nr_sv.
+    //   Each sv_indices[i] is in the range of [1, ..., num_traning_data].
+    //
+    // TODO.
+}
+
+void warco::PatchModel::load(const char* name)
+{
+    // TODO
+}
+
+unsigned warco::PatchModel::predict(const cv::Mat& corr) const
+{
+    if(! _svm)
+        throw std::runtime_error("Load model before predicting plx!");
+
+    // We only need to have the kernel evaluation with support vectors.
+    // TODO: Not always reallocate, but keep between calls.
+#if 1
+    auto N = _svm->l;
+    svm_node* nodes = new svm_node[N + 2];
+    for(int i = 0 ; i < N ; ++i) {
+        int iSV = _svm->sv_indices[i];
+        // -1 because in the case of a kernel they start at 1!
+        double d = dist_cbh(this->_corrs[iSV-1], corr);
+        nodes[1+i].index = iSV;
+        nodes[1+i].value = std::exp(-d / _mean);
+    }
+    nodes[0].index = 0;
+    nodes[1+_svm->l].index = -1;
+#else
+    auto N = _corrs.size();
+    svm_node* nodes = new svm_node[N+2];
+    for(unsigned i = 0 ; i < N ; ++i) {
+        double d = dist_cbh(this->_corrs[i], corr);
+        nodes[1+i].index = 1+i;
+        nodes[1+i].value = std::exp(-d / _mean);
+    }
+    nodes[0].index = 0; // And .value is arbitrary at test-time.
+    nodes[1+N].index = -1;
+#endif
+
+    unsigned label = static_cast<unsigned>(svm_predict(_svm, nodes));
+
+    delete[] nodes;
+
+    return label;
+}
+
+std::vector<double> warco::PatchModel::predict_probas(const cv::Mat& corr) const
+{
+    // TODO Seems to be b0rked?
+    // TODO maybe works better with optimal C?
+    std::vector<double> nrvo(svm_get_nr_class(_svm), 0.0);
+
+    // TODO also see comments in predict
+    auto N = _corrs.size();
+    svm_node* nodes = new svm_node[N+2];
+    for(unsigned i = 0 ; i < N ; ++i) {
+        double d = dist_cbh(this->_corrs[i], corr);
+        nodes[1+i].index = 1+i;
+        nodes[1+i].value = std::exp(-d / _mean);
+    }
+    nodes[0].index = 0; // And .value is arbitrary at test-time.
+    nodes[1+N].index = -1;
+
+    svm_predict_probability(_svm, nodes, &nrvo[0]);
+
+    delete[] nodes;
+
+    return nrvo;
+}
+

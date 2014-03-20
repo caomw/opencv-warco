@@ -33,6 +33,11 @@ set(LIB_SRC
     dists.hpp
     features.cpp
     features.hpp
+    model.cpp
+    model.hpp
+
+    libsvm/svm.cpp
+    libsvm/svm.h
 )
 
 set(COMMON_SRC
@@ -44,7 +49,9 @@ set(COMMON_SRC
 add_library(warco ${LIB_SRC})
 add_executable(warco-train train.cpp ${COMMON_SRC})
 add_executable(warco-pred pred.cpp ${COMMON_SRC})
+add_executable(warco-traintest traintest.cpp ${COMMON_SRC})
 add_executable(warco-utest utest.cpp ${COMMON_SRC})
 target_link_libraries(warco-train warco ${OpenCV_LIBS})
 target_link_libraries(warco-pred warco ${OpenCV_LIBS})
+target_link_libraries(warco-traintest warco ${OpenCV_LIBS})
 target_link_libraries(warco-utest warco ${OpenCV_LIBS})

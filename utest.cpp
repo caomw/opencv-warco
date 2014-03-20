@@ -8,6 +8,7 @@
 
 #include "covcorr.hpp"
 #include "dists.hpp"
+#include "model.hpp"
 
 int main(int argc, char** argv)
 {
@@ -18,6 +19,7 @@ int main(int argc, char** argv)
 
     warco::test_covcorr();
     warco::test_dists();
+    warco::test_model();
 
     return 0;
 }
