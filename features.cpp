@@ -23,7 +23,9 @@ static void mkDooG(const cv::Mat& l, cv::Mat* out)
     GaussianBlur(l, g2, cv::Size(3,3), sigma2, sigma2, cv::BORDER_REFLECT_101);
 
 #ifndef NDEBUG
-    std::cout << "g1: " << to_s(g1) << " ; g2: " << to_s(g2) << std::endl;
+    if(getenv("WARCO_DEBUG")) {
+        std::cout << "g1: " << to_s(g1) << " ; g2: " << to_s(g2) << std::endl;
+    }
 #endif
 
     const int top    = 2,
@@ -36,7 +38,9 @@ static void mkDooG(const cv::Mat& l, cv::Mat* out)
     // Lol this implies double-mirror on the borders, careful!
 
 #ifndef NDEBUG
-    std::cout << "g: " << to_s(g) << " ; G: " << to_s(G) << std::endl;
+    if(getenv("WARCO_DEBUG")) {
+        std::cout << "g: " << to_s(g) << " ; G: " << to_s(G) << std::endl;
+    }
 #endif
 
     auto mkr = [w,h](int l, int t) { return cv::Rect(l, t, w, h); };
@@ -63,14 +67,18 @@ warco::Features warco::mkfeats(const cv::Mat& m)
     Features nrvo(3+8+2);
 
 #ifndef NDEBUG
-    std::cout << "m: " << to_s(m) << std::endl;
+    if(getenv("WARCO_DEBUG")) {
+        std::cout << "m: " << to_s(m) << std::endl;
+    }
 #endif
 
     // Get L*a*b* values out of it. They are all in [0,255] range since m is U8.
     cv::Mat lab;
     cvtColor(m, lab, CV_BGR2Lab);
 #ifndef NDEBUG
-    std::cout << "L*a*b*: " << to_s(lab) << std::endl;
+    if(getenv("WARCO_DEBUG")) {
+        std::cout << "L*a*b*: " << to_s(lab) << std::endl;
+    }
 #endif
 
     // But we work with float matrices only!
@@ -81,7 +89,9 @@ warco::Features warco::mkfeats(const cv::Mat& m)
     split(labf, &nrvo[0]);
 
 #ifndef NDEBUG
-    std::cout << "L*: " << to_s(nrvo[0]) << " ; a*: " << to_s(nrvo[1]) << " ; b*: " << to_s(nrvo[2]) << std::endl;
+    if(getenv("WARCO_DEBUG")) {
+        std::cout << "L*: " << to_s(nrvo[0]) << " ; a*: " << to_s(nrvo[1]) << " ; b*: " << to_s(nrvo[2]) << std::endl;
+    }
 #endif
 
     // Compute the DooG filtered version into 3-10
