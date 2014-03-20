@@ -93,6 +93,10 @@ static cv::Mat cov2corr(const cv::Mat& cov)
 {
     // "make invertible" ->
     //     Clamp |eigenvalues| to 1e-4
+    //
+    //  This is to work around patches where all pixels have the same value
+    //  for a certain feature, in which case there'd be a division by 0 in the
+    //  correlation computation.
     cv::Mat nrvo = warco::eig_fn(cov, [](double l) {
         return std::copysign(std::max(1e-4, std::abs(l)), l);
     });
