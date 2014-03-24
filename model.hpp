@@ -28,6 +28,8 @@ namespace warco {
         void save(const char* name) const;
         void load(const char* name);
 
+        unsigned nlbls() const;
+
     protected:
         std::vector<cv::Mat> _corrs;
         std::vector<double> _lbls;
@@ -36,15 +38,6 @@ namespace warco {
         double _mean;
 
         void free_svm();
-    };
-
-    struct Warco {
-        Warco() {};
-        ~Warco() {};
-
-    protected:
-        std::vector<std::tuple<double, PatchModel::Ptr>> _patchmodels;
-        std::vector<std::string> _lbls;
     };
 
 } // namespace warco

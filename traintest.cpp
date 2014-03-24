@@ -6,10 +6,11 @@
 #include "json/json.h"
 
 #include "covcorr.hpp"
+#include "cvutils.hpp"
 #include "dists.hpp"
 #include "features.hpp"
 #include "model.hpp"
-#include "cvutils.hpp"
+#include "warco.hpp"
 
 void foreach_img(const Json::Value& dataset, const char* traintest, std::function<void (unsigned, const cv::Mat&, std::string)> fn)
 {
@@ -29,24 +30,6 @@ void foreach_img(const Json::Value& dataset, const char* traintest, std::functio
         }
     }
 }
-
-#ifndef NDEBUG
-#include <iomanip>
-template<typename T>
-std::string to_s(const std::vector<T>& v)
-{
-    std::ostringstream ss;
-    ss << std::fixed << std::setprecision(3) << "[";
-
-    auto Nm1 = v.size() - 1;
-    for(unsigned i = 0 ; i < Nm1 ; ++i) {
-        ss << v[i] << ", ";
-    }
-    ss << v[Nm1] << "]";
-
-    return ss.str();
-}
-#endif // NDEBUG
 
 int main(int argc, char** argv)
 {
@@ -76,68 +59,33 @@ int main(int argc, char** argv)
         }
     }
 
-    // TODO: refactor the models stuff into one class and
-    //       make the magic numbers configurable.
-    std::vector<warco::PatchModel> models(5*5);
-    foreach_img(dataset, "train", [&models](unsigned lbl, const cv::Mat& image, std::string) {
-        auto corrs = warco::extract_corrs(warco::mkfeats(image));
-        auto icorr = corrs.begin();
-        auto imodel = models.begin();
-        for( ; icorr != corrs.end() && imodel != models.end() ; ++icorr, ++imodel ) {
-            imodel->add_sample(*icorr, lbl);
-        }
+    warco::Warco model;
+    foreach_img(dataset, "train", [&model](unsigned lbl, const cv::Mat& image, std::string) {
+        model.add_sample(image, lbl);
     });
 
     std::cout << "Training models" << std::flush;
-    for(auto& model : models) {
-        std::cout << "." << std::flush;
-        model.train();
-    }
+    model.train();
     std::cout << std::endl;
 
     std::cout << "Testing" << std::flush;
     std::cerr << "test,predicted,actual" << std::endl;
 
     Json::Value lbls = dataset["classes"];
-    unsigned L = lbls.size();
     unsigned correct = 0, total = 0;
-    foreach_img(dataset, "test", [&](unsigned lbl, const cv::Mat& image, std::string fname) {
+    foreach_img(dataset, "test", [&model, &lbls, &correct, &total](unsigned lbl, const cv::Mat& image, std::string fname) {
         std::cout << "." << std::flush;
 
-        auto corrs = warco::extract_corrs(warco::mkfeats(image));
-        auto icorr = begin(corrs);
-        auto imodel = begin(models);
-        auto ecorr = end(corrs);
-        auto emodel = end(models);
-
-        std::vector<unsigned> votes(L, 0);
-        std::vector<double> votes_proba(L, 0.0);
-        for( ; icorr != ecorr && imodel != emodel ; ++icorr, ++imodel ) {
-            unsigned pred = imodel->predict(*icorr);
-            votes[pred] += 1;
-#ifndef NDEBUG
-            if(vv)
-                std::cout << " " << pred;
-#endif
-
-            std::vector<double> probas = imodel->predict_probas(*icorr);
-            double w = 1.0 / models.size();
-            for(unsigned i = 0 ; i < L ; ++i) {
-                votes_proba[i] += probas[i] * w;
-            }
-        }
-
-        // argmax
-        unsigned pred = std::max_element(begin(votes), end(votes)) - begin(votes);
-        unsigned pred_proba = std::max_element(begin(votes_proba), end(votes_proba)) - begin(votes_proba);
+        unsigned pred = model.predict(image);
+        //unsigned pred_proba = model.predict_proba(image);
 
 #ifndef NDEBUG
-        if(vv) {
-            std::cout << " => " << pred << " (=" << lbls[pred].asString() << ")"<< std::endl;
-            std::cout << to_s(votes) << std::endl;
-            std::cout << to_s(votes_proba) << std::endl;
-            std::cout << " => " << pred_proba << " (=" << lbls[pred_proba].asString() << ")"<< std::endl;
-        }
+        //if(vv) {
+            //std::cout << " => " << pred << " (=" << lbls[pred].asString() << ")"<< std::endl;
+            //std::cout << to_s(votes) << std::endl;
+            //std::cout << to_s(votes_proba) << std::endl;
+            //std::cout << " => " << pred_proba << " (=" << lbls[pred_proba].asString() << ")"<< std::endl;
+        //}
 #endif
 
         std::cerr << fname << "," << lbls[pred].asString() << "," << lbls[lbl].asString() << std::endl;

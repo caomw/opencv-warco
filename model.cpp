@@ -225,3 +225,11 @@ std::vector<double> warco::PatchModel::predict_probas(const cv::Mat& corr) const
     return nrvo;
 }
 
+unsigned warco::PatchModel::nlbls() const
+{
+    if(!_svm)
+        throw std::runtime_error("Calling PatchModel::nlbls before training!");
+
+    return svm_get_nr_class(_svm);
+}
+

@@ -35,6 +35,8 @@ set(LIB_SRC
     features.hpp
     model.cpp
     model.hpp
+    warco.cpp
+    warco.hpp
 
     libsvm/svm.cpp
     libsvm/svm.h
