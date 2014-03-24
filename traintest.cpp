@@ -65,8 +65,8 @@ int main(int argc, char** argv)
     });
 
     std::cout << "Training models" << std::flush;
-    model.train();
-    std::cout << std::endl;
+    double avg_train = model.train();
+    std::cout << std::endl << "Average training score: " << avg_train << std::endl;
 
     std::cout << "Testing" << std::flush;
     std::cerr << "test,predicted,actual" << std::endl;

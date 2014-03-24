@@ -49,18 +49,34 @@ void warco::Warco::add_sample(const cv::Mat& img, unsigned label)
 
 double warco::Warco::train()
 {
+    double w_tot = 0.0;
     for(auto& model : _patchmodels) {
 #ifndef NDEBUG
         if(getenv("WARCO_DEBUG")) {
             std::cout << "." << std::flush;
         }
 #endif
-        model.model->train();
-        model.w = 1.0/_patchmodels.size();
+        model.w = model.model->train();
+        w_tot += model.w;
     }
 
-    // TODO: Actually would be nice to return training error if it's free.
-    return 0.0;
+    for(auto& model : _patchmodels) {
+        model.w /= w_tot;
+    }
+
+#ifndef NDEBUG
+    if(getenv("WARCO_DEBUG")) {
+        auto model = _patchmodels.begin();
+        for(unsigned y = 0 ; y < 5 ; ++y) {
+            for(unsigned x = 0 ; x < 5 ; ++x, ++model)
+                std::cout << model->w << " ";
+            std::cout << std::endl;
+        }
+    }
+#endif
+
+    // Return the average error.
+    return w_tot / _patchmodels.size();
 }
 
 unsigned warco::Warco::predict(const cv::Mat& img) const
