@@ -21,7 +21,7 @@ namespace warco {
         ~PatchModel();
 
         void add_sample(const cv::Mat& corr, unsigned label);
-        double train();
+        double train(const std::vector<double>& C_crossval = {0.01, 0.1, 1., 10., 100.});
         unsigned predict(const cv::Mat& corr) const;
         std::vector<double> predict_probas(const cv::Mat& corr) const;
 

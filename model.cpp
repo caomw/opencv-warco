@@ -45,7 +45,7 @@ void warco::PatchModel::add_sample(const cv::Mat& corr, unsigned label)
     _lbls.push_back(static_cast<double>(label));
 }
 
-double warco::PatchModel::train()
+double warco::PatchModel::train(const std::vector<double>& C_crossval)
 {
     this->free_svm();
 
@@ -132,17 +132,46 @@ double warco::PatchModel::train()
     // not free the memory used by svm_problem if you are still using the
     // svm_model produced by svm_train().
 
+    double best = 0.0;
+    double best_c = 0.0;
+    for(auto c : C_crossval) {
+        param.C = c;
+
+        std::vector<double> pred(N);
+        svm_cross_validation(_prob, &param, 8, &pred[0]);
+
+        // Compute accuracy;
+        unsigned N_correct = 0;
+        for(unsigned i = 0 ; i < N ; ++i)
+            if(pred[i] == _lbls[i])
+                ++N_correct;
+        double accuracy = N_correct/static_cast<double>(N);
+
+#ifndef NDEBUG
+        if(getenv("WARCO_DEBUG")) {
+            std::cout << "Cross-validation: C=" << c << " => " << 100.*accuracy << "%" << std::endl;
+        }
+#endif
+
+        // Keep track of the best C.
+        if(accuracy > best) {
+            best = accuracy;
+            best_c = c;
+        }
+    }
+
+    // Now train an SVM on the full dataset with the optimal C.
+    param.C = best_c;
     _svm = svm_train(_prob, &param);
 
 #ifndef NDEBUG
     if(getenv("WARCO_DEBUG")) {
         std::cout << "#data: " << _prob->l << std::endl;
-        std::cout << "#SV: " << _svm->l << std::endl;
+        std::cout << "#SV: " << _svm->l << " (" << 100.0*_svm->l/_prob->l << "%)" << std::endl;
     }
 #endif
 
-    // TODO: return trainingset accuracy.
-    return 0.0;
+    return best;
 }
 
 void warco::PatchModel::save(const char* name) const
