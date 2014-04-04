@@ -58,10 +58,10 @@ static void mkDooG(const cv::Mat& l, cv::Mat* out)
 
 warco::Features warco::mkfeats(const cv::Mat& m)
 {
-    // Layout is:
-    // 0-2: L, a, b
-    // 3-6: 4 "sharp" DooG gradients
-    // 7-10: 4 "smooth" DooG gradients
+    // Layout is (inclusive):
+    // 0-3: 4 "sharp" DooG gradients
+    // 4-7: 4 "smooth" DooG gradients
+    // 8-10: L, a, b
     // 11: gradient magnitude
     // 12: gradient orientation
     Features nrvo(3+8+2);
@@ -85,23 +85,25 @@ warco::Features warco::mkfeats(const cv::Mat& m)
     // Might go for signed 16bit at some point, but only as an optimization if
     // needed since we need to be careful with computations.
     cv::Mat labf;
-    lab.convertTo(labf, CV_32FC3, 1./255.);
-    split(labf, &nrvo[0]);
+    lab.convertTo(labf, CV_32FC3);
+    split(labf, &nrvo[8]);
+
+    const cv::Mat& l = nrvo[8];
 
 #ifndef NDEBUG
     if(getenv("WARCO_DEBUG")) {
-        std::cout << "L*: " << to_s(nrvo[0]) << " ; a*: " << to_s(nrvo[1]) << " ; b*: " << to_s(nrvo[2]) << std::endl;
+        std::cout << "L*: " << to_s(l) << " ; a*: " << to_s(nrvo[9]) << " ; b*: " << to_s(nrvo[10]) << std::endl;
     }
 #endif
 
-    // Compute the DooG filtered version into 3-10
-    mkDooG(nrvo[0], &nrvo[3]);
+    // Compute the DooG filtered version into 0-7
+    mkDooG(l, &nrvo[0]);
 
     // Compute the gradient mag/ori into 11-12
     cv::Mat dx, dy;
     const int ksize = 1;
-    Sobel(nrvo[0], dx, CV_32F, 1, 0, ksize);
-    Sobel(nrvo[0], dy, CV_32F, 0, 1, ksize);
+    Sobel(l, dx, CV_32F, 1, 0, ksize);
+    Sobel(l, dy, CV_32F, 0, 1, ksize);
     magnitude(dx, dy, nrvo[11]);
     phase(dx, dy, nrvo[12]); // in radians by default.
 
