@@ -7,26 +7,11 @@
 #include "covcorr.hpp"
 #include "features.hpp"
 #include "model.hpp"
-#include <iostream>
 
 #ifndef NDEBUG
-#include <iomanip>
-#include <iostream>
-template<typename T>
-std::string to_s(const std::vector<T>& v)
-{
-    std::ostringstream ss;
-    ss << std::fixed << std::setprecision(3) << "[";
-
-    auto Nm1 = v.size() - 1;
-    for(unsigned i = 0 ; i < Nm1 ; ++i) {
-        ss << v[i] << ", ";
-    }
-    ss << v[Nm1] << "]";
-
-    return ss.str();
-}
-#endif // NDEBUG
+#  include <iostream>
+#  include "to_s.hpp"
+#endif
 
 warco::Warco::Patch::Patch()
     : w(0.0)

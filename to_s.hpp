@@ -1,7 +1,10 @@
 #pragma once
 
+#include <iomanip>
 #include <string>
 #include <sstream>
+
+#include <opencv2/core.hpp>
 
 namespace warco {
 
@@ -43,6 +46,21 @@ inline std::string to_s<cv::Mat>(const cv::Mat& m)
     double min, max;
     minMaxIdx(m, &min, &max);
     ss << " values in [" << min << ".." << max << "]";
+
+    return ss.str();
+}
+
+template<typename T>
+inline std::string to_s(const std::vector<T>& v)
+{
+    std::ostringstream ss;
+    ss << std::fixed << std::setprecision(3) << "[";
+
+    auto Nm1 = v.size() - 1;
+    for(unsigned i = 0 ; i < Nm1 ; ++i) {
+        ss << v[i] << ", ";
+    }
+    ss << v[Nm1] << "]";
 
     return ss.str();
 }
