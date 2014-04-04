@@ -21,7 +21,7 @@ static cv::Mat extract_cov(const warco::Features& feats, unsigned x, unsigned y,
 
     cv::Rect r(x, y, w, h);
 
-    for(auto i = 0 ; i < nfeats ; ++i)
+    for(unsigned i = 0 ; i < nfeats ; ++i)
         means[i] = mean(feats[i](r))[0];
 
     cv::Mat cov(nfeats, nfeats, CV_32FC1, 0.0f);
@@ -32,12 +32,12 @@ static cv::Mat extract_cov(const warco::Features& feats, unsigned x, unsigned y,
 
     // TODO: Could use iterators?
     std::vector<const float*> lines(nfeats);
-    for(auto iy = 0 ; iy < h ; ++iy) {
-        for(auto i = 0 ; i < nfeats ; ++i)
+    for(unsigned iy = 0 ; iy < h ; ++iy) {
+        for(unsigned i = 0 ; i < nfeats ; ++i)
             lines[i] = feats[i].ptr<float>(y + iy) + x;
 
-        for(auto ix = 0 ; ix < w ; ++ix) {
-            for(auto i = 0 ; i < nfeats ; ++i) {
+        for(unsigned ix = 0 ; ix < w ; ++ix) {
+            for(unsigned i = 0 ; i < nfeats ; ++i) {
                 float fi = *lines[i]-means[i];
                 cov.at<float>(i,i) += fi*fi;
                 for(auto j = i+1 ; j < nfeats ; ++j) {
@@ -113,7 +113,7 @@ static cv::Mat cov2corr(const cv::Mat& cov)
     // TODO: Doesn't work. Why?
     //sqrt(nrvo.diag(), stddev);
     auto diag = nrvo.diag();
-    for(auto i = 0 ; i < stddev.size() ; ++i)
+    for(unsigned i = 0 ; i < stddev.size() ; ++i)
         stddev[i] = sqrt(diag.at<float>(i));
 
     for(auto y = 0 ; y < nrvo.rows ; ++y) {

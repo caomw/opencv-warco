@@ -50,26 +50,26 @@ void warco::Warco::add_sample(const cv::Mat& img, unsigned label)
 double warco::Warco::train()
 {
     double w_tot = 0.0;
-    for(auto& model : _patchmodels) {
+    for(auto& patch : _patchmodels) {
 #ifndef NDEBUG
         if(getenv("WARCO_DEBUG")) {
             std::cout << "." << std::flush;
         }
 #endif
-        model.w = model.model->train();
-        w_tot += model.w;
+        patch.w = patch.model->train();
+        w_tot += patch.w;
     }
 
-    for(auto& model : _patchmodels) {
-        model.w /= w_tot;
+    for(auto& patch : _patchmodels) {
+        patch.w /= w_tot;
     }
 
 #ifndef NDEBUG
     if(getenv("WARCO_DEBUG")) {
-        auto model = _patchmodels.begin();
+        auto patch = _patchmodels.begin();
         for(unsigned y = 0 ; y < 5 ; ++y) {
-            for(unsigned x = 0 ; x < 5 ; ++x, ++model)
-                std::cout << model->w << " ";
+            for(unsigned x = 0 ; x < 5 ; ++x, ++patch)
+                std::cout << patch->w << " ";
             std::cout << std::endl;
         }
     }

@@ -1,7 +1,6 @@
 #pragma once
 
 #include <vector>
-#include <memory>
 
 namespace cv {
     class Mat;
@@ -15,8 +14,6 @@ namespace warco {
     void test_model();
 
     struct PatchModel {
-        using Ptr = std::shared_ptr<PatchModel>;
-
         PatchModel();
         ~PatchModel();
 
