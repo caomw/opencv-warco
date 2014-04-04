@@ -15,6 +15,8 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     else()
         add_definitions(-std=c++11)
     endif()
+
+    add_definitions(-Wall)
 endif()
 
 find_package(OpenCV REQUIRED core imgproc highgui)
