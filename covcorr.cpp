@@ -34,7 +34,7 @@ static cv::Mat extract_cov(const warco::Features& feats, unsigned x, unsigned y,
     std::vector<const float*> lines(nfeats);
     for(auto iy = 0 ; iy < h ; ++iy) {
         for(auto i = 0 ; i < nfeats ; ++i)
-            lines[i] = feats[i].ptr<float>(y + iy);
+            lines[i] = feats[i].ptr<float>(y + iy) + x;
 
         for(auto ix = 0 ; ix < w ; ++ix) {
             for(auto i = 0 ; i < nfeats ; ++i) {
@@ -78,6 +78,12 @@ static void test_cov()
     warco::assert_mat_almost_eq(cov, (cv::Mat_<float>(2,2) <<
         10./3., 1./3.,
          1./3., .1/3.
+    ));
+
+    cov = extract_cov(fts, 2, 1, 1, 2);
+    warco::assert_mat_almost_eq(cov, (cv::Mat_<float>(2,2) <<
+        4.5, .45,
+        .45, .045
     ));
 
     cov = extract_cov(fts, 0, 0, 3, 3);
