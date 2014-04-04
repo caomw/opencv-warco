@@ -4,7 +4,7 @@
 #include <string>
 #include <time.h>
 
-#include <opencv2/core/core.hpp>
+#include <opencv2/core.hpp>
 
 #include "covcorr.hpp"
 #include "dists.hpp"

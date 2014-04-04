@@ -1,6 +1,8 @@
 #include "model.hpp"
 
 #include <cmath>
+#include <stdexcept>
+
 #ifndef NDEBUG
 #  include <iostream>
 #endif
@@ -108,25 +110,19 @@ double warco::PatchModel::train(const std::vector<double>& C_crossval)
 
     // Now setup the SVM's parameters to use above kernel.
 
-    svm_parameter param = {0};
+    svm_parameter param = svm_parameter();
     param.svm_type = C_SVC;
     param.kernel_type = PRECOMPUTED;
-    // degree, gamma, coef0 unused.
+    // degree, gamma, coef0 unused. C cross-validated
 
     // Training settings
     param.cache_size = 1; // MB (for kernels, needs to be >= 0 even if unused.)
     param.eps = 0.001; // "(we usually use 0.00001 in nu-SVC, 0.001 in others)."
-    param.C = 0.1; // TODO: need to cross-validate this.
     // C_SVC only `nr_weight`, `weight_label` and `weight` unused.
     // NU_SV? only `nu`
     // EPSILON_SVR: `p`
     param.shrinking = int(true);
     param.probability = int(true);
-
-    // Checking for correctness of above settings.
-    if(const char* err = svm_check_parameter(_prob, &param)) {
-        throw std::runtime_error(err);
-    }
 
     // *NOTE* Because svm_model contains pointers to svm_problem, you can
     // not free the memory used by svm_problem if you are still using the
@@ -136,6 +132,11 @@ double warco::PatchModel::train(const std::vector<double>& C_crossval)
     double best_c = 0.0;
     for(auto c : C_crossval) {
         param.C = c;
+
+        // Checking for correctness of above settings.
+        if(const char* err = svm_check_parameter(_prob, &param)) {
+            throw std::runtime_error(err);
+        }
 
         std::vector<double> pred(N);
         svm_cross_validation(_prob, &param, 8, &pred[0]);
@@ -210,7 +211,7 @@ unsigned warco::PatchModel::predict(const cv::Mat& corr) const
         nodes[1+i].value = std::exp(-d / _mean);
     }
     nodes[0].index = 0;
-    nodes[1+_svm->l].index = -1;
+    nodes[N+1].index = -1;
 #else
     auto N = _corrs.size();
     svm_node* nodes = new svm_node[N+2];
@@ -220,7 +221,7 @@ unsigned warco::PatchModel::predict(const cv::Mat& corr) const
         nodes[1+i].value = std::exp(-d / _mean);
     }
     nodes[0].index = 0; // And .value is arbitrary at test-time.
-    nodes[1+N].index = -1;
+    nodes[N+1].index = -1;
 #endif
 
     unsigned label = static_cast<unsigned>(svm_predict(_svm, nodes));
@@ -232,8 +233,8 @@ unsigned warco::PatchModel::predict(const cv::Mat& corr) const
 
 std::vector<double> warco::PatchModel::predict_probas(const cv::Mat& corr) const
 {
-    // TODO Seems to be b0rked?
-    // TODO maybe works better with optimal C?
+    // TODO: might want to get that one as an output argument
+    //       such that if used in an inner loop doesn't get perma-reallocated.
     std::vector<double> nrvo(svm_get_nr_class(_svm), 0.0);
 
     // TODO also see comments in predict
@@ -245,7 +246,7 @@ std::vector<double> warco::PatchModel::predict_probas(const cv::Mat& corr) const
         nodes[1+i].value = std::exp(-d / _mean);
     }
     nodes[0].index = 0; // And .value is arbitrary at test-time.
-    nodes[1+N].index = -1;
+    nodes[N+1].index = -1;
 
     svm_predict_probability(_svm, nodes, &nrvo[0]);
 

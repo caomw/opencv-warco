@@ -1,7 +1,8 @@
 #pragma once
 
-#include <vector>
+#include <functional>
 #include <memory>
+#include <vector>
 
 namespace cv {
     class Mat;
