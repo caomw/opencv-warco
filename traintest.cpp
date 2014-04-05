@@ -39,10 +39,6 @@ int main(int argc, char** argv)
         return 0;
     }
 
-#ifndef NDEBUG
-    bool vv = getenv("WARCO_DEBUG");
-#endif
-
     Json::Value dataset;
     {
         std::ifstream infile(argv[1]);
@@ -84,20 +80,10 @@ int main(int argc, char** argv)
     foreach_img(dataset, "test", [&model, &lbls, &correct, &total](unsigned lbl, const cv::Mat& image, std::string fname) {
         std::cout << "." << std::flush;
 
-        unsigned pred = model.predict(image);
-        //unsigned pred_proba = model.predict_proba(image);
-
-#ifndef NDEBUG
-        //if(vv) {
-            //std::cout << " => " << pred << " (=" << lbls[pred].asString() << ")"<< std::endl;
-            //std::cout << to_s(votes) << std::endl;
-            //std::cout << to_s(votes_proba) << std::endl;
-            //std::cout << " => " << pred_proba << " (=" << lbls[pred_proba].asString() << ")"<< std::endl;
-        //}
-#endif
+        //unsigned pred = model.predict(image);
+        unsigned pred = model.predict_proba(image);
 
         std::cerr << fname << "," << lbls[pred].asString() << "," << lbls[lbl].asString() << std::endl;
-        //std::cerr << fname << "," << lbls[pred_proba].asString() << "," << lbls[lbl].asString() << std::endl;
 
         correct += pred == lbl;
         ++total;
