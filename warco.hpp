@@ -27,6 +27,8 @@ namespace warco {
         unsigned predict(const cv::Mat& img) const;
         unsigned predict_proba(const cv::Mat& img) const;
 
+        unsigned nlbl() const;
+
         // TODO
         void save(const char* name) const;
         void load(const char* name);

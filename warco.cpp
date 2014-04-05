@@ -1,7 +1,5 @@
 #include "warco.hpp"
 
-#include <unordered_map>
-
 #include <opencv2/imgproc.hpp>
 
 #include "covcorr.hpp"
@@ -52,11 +50,11 @@ double warco::Warco::train()
 
 #ifndef NDEBUG
     if(getenv("WARCO_DEBUG")) {
-        auto patch = _patchmodels.begin();
-        for(unsigned y = 0 ; y < 5 ; ++y) {
-            for(unsigned x = 0 ; x < 5 ; ++x, ++patch)
-                std::cout << patch->w << " ";
-            std::cout << std::endl;
+        unsigned x = 0, w = static_cast<unsigned>(sqrt(_patchmodels.size()));
+        for(const auto& patch : _patchmodels) {
+            if(x++ % w == 0)
+                std::cout << std::endl;
+            std::cout << patch.w << " ";
         }
     }
 #endif
@@ -67,7 +65,7 @@ double warco::Warco::train()
 
 unsigned warco::Warco::predict(const cv::Mat& img) const
 {
-    std::vector<double> votes(_patchmodels.front().model->nlbls(), 0.0);
+    std::vector<double> votes(this->nlbl(), 0.0);
 
     this->foreach_model(img, [&votes](const Patch& patch, const cv::Mat& corr) {
         unsigned pred = patch.model->predict(corr);
@@ -92,7 +90,7 @@ unsigned warco::Warco::predict(const cv::Mat& img) const
 
 unsigned warco::Warco::predict_proba(const cv::Mat& img) const
 {
-    std::vector<double> probas(_patchmodels.front().model->nlbls(), 0.0);
+    std::vector<double> probas(this->nlbl(), 0.0);
 
     this->foreach_model(img, [&probas](const Patch& patch, const cv::Mat& corr) {
         auto pred = patch.model->predict_probas(corr);
@@ -115,6 +113,11 @@ unsigned warco::Warco::predict_proba(const cv::Mat& img) const
 
     // argmax
     return std::max_element(begin(probas), end(probas)) - begin(probas);
+}
+
+unsigned warco::Warco::nlbl() const
+{
+    return _patchmodels.front().model->nlbls();
 }
 
 void warco::Warco::foreach_model(const cv::Mat& img, std::function<void(const Patch& patch, const cv::Mat& corr)> fn) const
