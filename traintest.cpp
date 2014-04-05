@@ -66,9 +66,15 @@ int main(int argc, char** argv)
         model.add_sample(image, lbl);
     });
 
-    std::cout << "Training models" << std::flush;
-    double avg_train = model.train();
-    std::cout << std::endl << "Average training score: " << avg_train << std::endl;
+    std::cout << "Training model" << std::flush;
+    std::vector<double> C;
+    if(dataset.isMember("crossval_C"))
+        for(Json::Value c : dataset["crossval_C"])
+            C.push_back(c.asDouble());
+    else
+        C = {0.1, 1.0, 10.0};
+    double avg_train = model.train(C, [](unsigned){ std::cout << "." << std::flush; });
+    std::cout << std::endl << "Average training score *per patch*: " << avg_train << std::endl;
 
     std::cout << "Testing" << std::flush;
     std::cerr << "test,predicted,actual" << std::endl;

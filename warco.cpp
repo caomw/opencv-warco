@@ -31,22 +31,21 @@ void warco::Warco::add_sample(const cv::Mat& img, unsigned label)
     });
 }
 
-double warco::Warco::train()
+double warco::Warco::train(const std::vector<double>& cvC, std::function<void(unsigned)> progress)
 {
     double w_tot = 0.0;
     for(auto& patch : _patchmodels) {
-#ifndef NDEBUG
-        if(getenv("WARCO_DEBUG")) {
-            std::cout << "." << std::flush;
-        }
-#endif
-        patch.w = patch.model->train();
+        patch.w = patch.model->train(cvC);
         w_tot += patch.w;
+
+        progress(_patchmodels.size() + 1);
     }
 
     for(auto& patch : _patchmodels) {
         patch.w /= w_tot;
     }
+
+    progress(_patchmodels.size() + 1);
 
 #ifndef NDEBUG
     if(getenv("WARCO_DEBUG")) {

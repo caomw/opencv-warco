@@ -23,7 +23,7 @@ namespace warco {
 
         void add_sample(const cv::Mat& img, unsigned label);
 
-        double train();
+        double train(const std::vector<double>& cv_C, std::function<void(unsigned max)> progress = [](float){});
         unsigned predict(const cv::Mat& img) const;
         unsigned predict_proba(const cv::Mat& img) const;
 
