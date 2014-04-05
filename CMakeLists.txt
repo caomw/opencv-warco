@@ -35,6 +35,8 @@ set(LIB_SRC
     dists.hpp
     features.cpp
     features.hpp
+    filterbank.cpp
+    filterbank.hpp
     model.cpp
     model.hpp
     warco.cpp

@@ -1,4 +1,5 @@
 {
+    "filterbank": "/path/to/DooG.bank",
     "classes": ["front", "left", "right", "back", "background"],
     "train": {
         "front": [

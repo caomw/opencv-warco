@@ -9,6 +9,7 @@
 #include "cvutils.hpp"
 #include "dists.hpp"
 #include "features.hpp"
+#include "filterbank.hpp"
 #include "model.hpp"
 #include "warco.hpp"
 
@@ -59,7 +60,8 @@ int main(int argc, char** argv)
         }
     }
 
-    warco::Warco model;
+    auto fb = cv::FilterBank(dataset["filterbank"].asCString());
+    warco::Warco model(fb);
     foreach_img(dataset, "train", [&model](unsigned lbl, const cv::Mat& image, std::string) {
         model.add_sample(image, lbl);
     });

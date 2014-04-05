@@ -1,62 +1,17 @@
 #include "features.hpp"
 
 #include <opencv2/opencv.hpp>
-
 // For CV_BGR2Lab, at least in opencv trunk.
 #include <opencv2/imgproc/types_c.h>
+
+#include "filterbank.hpp"
 
 #ifndef NDEBUG
 #  include <iostream>
 #  include "to_s.hpp"
-using warco::to_s;
 #endif
 
-static void mkDooG(const cv::Mat& l, cv::Mat* out)
-{
-    const int w = l.cols, h = l.rows;
-
-    // Blur with two gaussians, used for DooG computation further down.
-    const double sigma1 = 0.5;
-    const double sigma2 = 1.0;
-    cv::Mat g1, g2;
-    GaussianBlur(l, g1, cv::Size(3,3), sigma1, sigma1, cv::BORDER_REFLECT_101);
-    GaussianBlur(l, g2, cv::Size(3,3), sigma2, sigma2, cv::BORDER_REFLECT_101);
-
-#ifndef NDEBUG
-    if(getenv("WARCO_DEBUG")) {
-        std::cout << "g1: " << to_s(g1) << " ; g2: " << to_s(g2) << std::endl;
-    }
-#endif
-
-    const int top    = 2,
-              bottom = 2,
-              left   = 2,
-              right  = 2;
-    cv::Mat g, G;
-    copyMakeBorder(g1, g, top, bottom, left, right, cv::BORDER_REFLECT_101);
-    copyMakeBorder(g2, G, top, bottom, left, right, cv::BORDER_REFLECT_101);
-    // Lol this implies double-mirror on the borders, careful!
-
-#ifndef NDEBUG
-    if(getenv("WARCO_DEBUG")) {
-        std::cout << "g: " << to_s(g) << " ; G: " << to_s(G) << std::endl;
-    }
-#endif
-
-    auto mkr = [w,h](int l, int t) { return cv::Rect(l, t, w, h); };
-
-    *out++ = g(mkr(left, 4)) - 2.0*g(mkr(left, 2)) + g(mkr(left, 0));
-    *out++ = g(mkr(left, 1))                       - g(mkr(left, 3));
-    *out++ = g(mkr(4,  top)) - 2.0*g(mkr(2,  top)) + g(mkr(0,  top));
-    *out++ = g(mkr(1,  top))                       - g(mkr(3,  top));
-
-    *out++ = G(mkr(left, 4)) - 2.0*G(mkr(left, 2)) + G(mkr(left, 0));
-    *out++ = G(mkr(left, 1))                       - G(mkr(left, 3));
-    *out++ = G(mkr(4,  top)) - 2.0*g(mkr(2,  top)) + G(mkr(0,  top));
-    *out++ = G(mkr(1,  top))                       - G(mkr(3,  top));
-}
-
-warco::Features warco::mkfeats(const cv::Mat& m)
+warco::Features warco::mkfeats(const cv::Mat& m, const cv::FilterBank& fb)
 {
     // Layout is (inclusive):
     // 0-3: 4 "sharp" DooG gradients
@@ -97,7 +52,7 @@ warco::Features warco::mkfeats(const cv::Mat& m)
 #endif
 
     // Compute the DooG filtered version into 0-7
-    mkDooG(l, &nrvo[0]);
+    fb.filter(l, &nrvo[0]);
 
     // Compute the gradient mag/ori into 11-12
     cv::Mat dx, dy;
@@ -105,7 +60,18 @@ warco::Features warco::mkfeats(const cv::Mat& m)
     Sobel(l, dx, CV_32F, 1, 0, ksize);
     Sobel(l, dy, CV_32F, 0, 1, ksize);
     magnitude(dx, dy, nrvo[11]);
-    phase(dx, dy, nrvo[12]); // in radians by default.
+    phase(dx, dy, nrvo[12]); // in radians [0,2pi] by default.
+
+    // The following makes 30 be the same as 210 degree.
+    // Interestingly, the results stay exactly the same.
+#if 0
+    for(int y = 0 ; y < nrvo[12].rows ; ++y) {
+        float* line = nrvo[12].ptr<float>(y);
+        for(int x = 0 ; x < nrvo[12].cols ; ++x, ++line)
+            if(*line > M_PI)
+                *line -= M_PI;
+    }
+#endif
 
     return nrvo;
 }

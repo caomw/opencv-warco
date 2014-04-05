@@ -18,8 +18,9 @@ warco::Warco::Patch::Patch()
     , model(new PatchModel())
 { }
 
-warco::Warco::Warco()
+warco::Warco::Warco(cv::FilterBank fb)
     : _patchmodels(5*5)
+    , _fb(fb)
 { }
 
 warco::Warco::~Warco()
@@ -128,7 +129,7 @@ void warco::Warco::foreach_model(const cv::Mat& img, std::function<void(const Pa
         img50 = img;
     }
 
-    auto feats = warco::mkfeats(img50);
+    auto feats = warco::mkfeats(img50, _fb);
 
     for(auto y = 0 ; y < 5 ; ++y)
         for(auto x = 0 ; x < 5 ; ++x)
