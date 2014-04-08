@@ -47,6 +47,9 @@ set(LIB_SRC
 )
 
 set(COMMON_SRC
+    mainutils.cpp
+    mainutils.hpp
+
     jsoncpp.cpp
     json/json.h
     json/json-forwards.h
