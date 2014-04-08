@@ -7,6 +7,21 @@
 
 #include <opencv2/opencv.hpp>
 
+cv::FilterBank::FilterBank()
+{ }
+
+cv::FilterBank::FilterBank(const char* fname)
+{
+    this->load(fname);
+}
+
+cv::FilterBank::FilterBank(const FilterBank& other)
+    : _kernels(other._kernels)
+{ }
+
+cv::FilterBank::~FilterBank()
+{ }
+
 void cv::FilterBank::load(const char* fname)
 {
     std::ifstream f(fname);
@@ -64,6 +79,11 @@ void cv::FilterBank::add_filter(Mat kernel)
     // Verify the filter, just to make sure
     if(std::abs(sum(kernel)[0]) > 1e-6)
         std::cerr << "Warning: kernel " << this->size() << " of bank doesn't sum to 0 but to " << sum(kernel)[0] << std::endl;
+}
+
+std::size_t cv::FilterBank::size() const
+{
+    return _kernels.size();
 }
 
 void cv::FilterBank::filter(const Mat& in, Mat* out) const
