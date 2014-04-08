@@ -16,9 +16,13 @@ namespace warco {
 
     struct PatchModel;
 
+    struct Patch {
+        double x, y, w, h;
+    };
+
     struct Warco {
 
-        Warco(cv::FilterBank fb);
+        Warco(cv::FilterBank fb, const std::vector<warco::Patch>& patches);
         ~Warco();
 
         void add_sample(const cv::Mat& img, unsigned label);
@@ -36,9 +40,10 @@ namespace warco {
     protected:
         struct Patch {
             double weight;
+            double x, y, w, h;
             std::unique_ptr<PatchModel> model;
 
-            Patch();
+            Patch(double x, double y, double w, double h);
         };
 
         std::vector<Patch> _patchmodels;

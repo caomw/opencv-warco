@@ -56,8 +56,25 @@ int main(int argc, char** argv)
         }
     }
 
+    // Read in the patch definitions from the config file
+    // or default if none is defined.
+    std::vector<warco::Patch> patches;
+    if(dataset.isMember("patches")) {
+        for(const Json::Value& p : dataset["patches"]) {
+            if(p.size() != 4)
+                throw std::runtime_error("One of the patches specified in " + std::string(argv[1]) + " is uncorrectly specified as it doesn't have four entries.");
+
+            patches.push_back(warco::Patch{p[0].asDouble(), p[1].asDouble(), p[2].asDouble(), p[3].asDouble()});
+        }
+    } else {
+        // Default from warco for 50x50
+        for(auto y = 0 ; y < 5 ; ++y)
+            for(auto x = 0 ; x < 5 ; ++x)
+                patches.push_back(warco::Patch{(1+8*x)/50., (1+8*y)/50., 16/50., 16/50.});
+    }
+
     auto fb = cv::FilterBank(dataset["filterbank"].asCString());
-    warco::Warco model(fb);
+    warco::Warco model(fb, patches);
     foreach_img(dataset, "train", [&model](unsigned lbl, const cv::Mat& image, std::string) {
         model.add_sample(image, lbl);
     });

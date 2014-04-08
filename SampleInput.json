@@ -1,5 +1,10 @@
 {
     "filterbank": "/path/to/DooG.bank",
+    "patches": [
+        // x,y,w,h in percent of image.
+        [0.1, 0.1, 0.4, 0.4], [0.5, 0.1, 0.4, 0.4],
+        [0.1, 0.5, 0.4, 0.4], [0.5, 0.5, 0.4, 0.4]
+    ],
     "classes": ["front", "left", "right", "back", "background"],
     "train": {
         "front": [

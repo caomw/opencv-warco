@@ -11,15 +11,18 @@
 #  include "to_s.hpp"
 #endif
 
-warco::Warco::Patch::Patch()
+warco::Warco::Patch::Patch(double x, double y, double w, double h)
     : weight(0.0)
+    , x(x), y(y), w(w), h(h)
     , model(new PatchModel())
 { }
 
-warco::Warco::Warco(cv::FilterBank fb)
-    : _patchmodels(5*5)
-    , _fb(fb)
-{ }
+warco::Warco::Warco(cv::FilterBank fb, const std::vector<warco::Patch>& patches)
+    : _fb(fb)
+{
+    for(auto p : patches)
+        _patchmodels.push_back(Patch(p.x, p.y, p.w, p.h));
+}
 
 warco::Warco::~Warco()
 { }
@@ -49,6 +52,7 @@ double warco::Warco::train(const std::vector<double>& cvC, std::function<void(un
 
 #ifndef NDEBUG
     if(getenv("WARCO_DEBUG")) {
+        // This heuristic only works for default stuff.
         unsigned x = 0, w = static_cast<unsigned>(sqrt(_patchmodels.size()));
         for(const auto& patch : _patchmodels) {
             if(x++ % w == 0)
@@ -121,20 +125,9 @@ unsigned warco::Warco::nlbl() const
 
 void warco::Warco::foreach_model(const cv::Mat& img, std::function<void(const Patch& patch, const cv::Mat& corr)> fn) const
 {
-    cv::Mat img50(50, 50, img.type());
+    auto feats = warco::mkfeats(img, _fb);
 
-    // Resize if necessary. Could also be smart and create grid with
-    // relative sizes etc. but meh. TODO
-    if(img.cols != 50 || img.rows != 50) {
-        cv::resize(img, img50, img50.size());
-    } else {
-        img50 = img;
-    }
-
-    auto feats = warco::mkfeats(img50, _fb);
-
-    for(auto y = 0 ; y < 5 ; ++y)
-        for(auto x = 0 ; x < 5 ; ++x)
-            fn(_patchmodels[y*5 + x], extract_corr(feats, 1+8*x, 1+8*y, 16, 16));
+    for(const auto& p : _patchmodels)
+        fn(p, extract_corr(feats, p.x*img.cols, p.y*img.rows, p.w*img.cols, p.h*img.rows));
 }
 
