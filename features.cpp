@@ -14,12 +14,15 @@
 warco::Features warco::mkfeats(const cv::Mat& m, const cv::FilterBank& fb)
 {
     // Layout is (inclusive):
-    // 0-3: 4 "sharp" DooG gradients
-    // 4-7: 4 "smooth" DooG gradients
-    // 8-10: L, a, b
-    // 11: gradient magnitude
-    // 12: gradient orientation
-    Features nrvo(3+8+2);
+    // 0-2: L, a, b
+    // 3: gradient magnitude
+    // 4: gradient orientation
+    // 5-x: filterbank
+    //
+    // Where in default warco 0-x is:
+    // 5-8: 4 "sharp" DooG gradients
+    // 9-12: 4 "smooth" DooG gradients
+    Features nrvo(3+2+fb.size());
 
 #ifndef NDEBUG
     if(getenv("WARCO_DEBUG")) {
@@ -41,37 +44,37 @@ warco::Features warco::mkfeats(const cv::Mat& m, const cv::FilterBank& fb)
     // needed since we need to be careful with computations.
     cv::Mat labf;
     lab.convertTo(labf, CV_32FC3);
-    split(labf, &nrvo[8]);
+    split(labf, &nrvo[0]);
 
-    const cv::Mat& l = nrvo[8];
+    const cv::Mat& l = nrvo[0];
 
 #ifndef NDEBUG
     if(getenv("WARCO_DEBUG")) {
-        std::cout << "L*: " << to_s(l) << " ; a*: " << to_s(nrvo[9]) << " ; b*: " << to_s(nrvo[10]) << std::endl;
+        std::cout << "L*: " << to_s(l) << " ; a*: " << to_s(nrvo[1]) << " ; b*: " << to_s(nrvo[2]) << std::endl;
     }
 #endif
 
-    // Compute the DooG filtered version into 0-7
-    fb.filter(l, &nrvo[0]);
-
-    // Compute the gradient mag/ori into 11-12
+    // Compute the gradient mag/ori
     cv::Mat dx, dy;
     const int ksize = 1;
     Sobel(l, dx, CV_32F, 1, 0, ksize);
     Sobel(l, dy, CV_32F, 0, 1, ksize);
-    magnitude(dx, dy, nrvo[11]);
-    phase(dx, dy, nrvo[12]); // in radians [0,2pi] by default.
+    magnitude(dx, dy, nrvo[3]);
+    phase(dx, dy, nrvo[4]); // in radians [0,2pi] by default.
 
     // The following makes 30 be the same as 210 degree.
     // Interestingly, the results stay exactly the same.
 #if 0
-    for(int y = 0 ; y < nrvo[12].rows ; ++y) {
-        float* line = nrvo[12].ptr<float>(y);
-        for(int x = 0 ; x < nrvo[12].cols ; ++x, ++line)
+    for(int y = 0 ; y < nrvo[4].rows ; ++y) {
+        float* line = nrvo[4].ptr<float>(y);
+        for(int x = 0 ; x < nrvo[4].cols ; ++x, ++line)
             if(*line > M_PI)
                 *line -= M_PI;
     }
 #endif
+
+    // Compute the filterbank.
+    fb.filter(l, &nrvo[5]);
 
     return nrvo;
 }
