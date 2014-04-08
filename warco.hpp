@@ -35,7 +35,7 @@ namespace warco {
 
     protected:
         struct Patch {
-            double w;
+            double weight;
             std::unique_ptr<PatchModel> model;
 
             Patch();

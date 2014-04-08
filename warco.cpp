@@ -12,7 +12,7 @@
 #endif
 
 warco::Warco::Patch::Patch()
-    : w(0.0)
+    : weight(0.0)
     , model(new PatchModel())
 { }
 
@@ -35,14 +35,14 @@ double warco::Warco::train(const std::vector<double>& cvC, std::function<void(un
 {
     double w_tot = 0.0;
     for(auto& patch : _patchmodels) {
-        patch.w = patch.model->train(cvC);
-        w_tot += patch.w;
+        patch.weight = patch.model->train(cvC);
+        w_tot += patch.weight;
 
         progress(_patchmodels.size() + 1);
     }
 
     for(auto& patch : _patchmodels) {
-        patch.w /= w_tot;
+        patch.weight /= w_tot;
     }
 
     progress(_patchmodels.size() + 1);
@@ -53,7 +53,7 @@ double warco::Warco::train(const std::vector<double>& cvC, std::function<void(un
         for(const auto& patch : _patchmodels) {
             if(x++ % w == 0)
                 std::cout << std::endl;
-            std::cout << patch.w << " ";
+            std::cout << patch.weight << " ";
         }
     }
 #endif
@@ -68,7 +68,7 @@ unsigned warco::Warco::predict(const cv::Mat& img) const
 
     this->foreach_model(img, [&votes](const Patch& patch, const cv::Mat& corr) {
         unsigned pred = patch.model->predict(corr);
-        votes[pred] += patch.w;
+        votes[pred] += patch.weight;
 
 #ifndef NDEBUG
         if(getenv("WARCO_DEBUG")) {
@@ -95,7 +95,7 @@ unsigned warco::Warco::predict_proba(const cv::Mat& img) const
         auto pred = patch.model->predict_probas(corr);
 
         for(unsigned i = 0 ; i < probas.size() ; ++i)
-            probas[i] += pred[i] * patch.w;
+            probas[i] += pred[i] * patch.weight;
 
 #ifndef NDEBUG
         if(getenv("WARCO_DEBUG")) {
