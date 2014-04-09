@@ -2,6 +2,7 @@
 
 #include <functional>
 #include <memory>
+#include <string>
 #include <vector>
 
 // For FilterBank.
@@ -23,6 +24,7 @@ namespace warco {
     struct Warco {
 
         Warco(cv::FilterBank fb, const std::vector<warco::Patch>& patches);
+        Warco(std::string name);
         ~Warco();
 
         void add_sample(const cv::Mat& img, unsigned label);
@@ -34,8 +36,8 @@ namespace warco {
         unsigned nlbl() const;
 
         // TODO
-        void save(const char* name) const;
-        void load(const char* name);
+        void save(std::string name) const;
+        void load(std::string name);
 
     protected:
         struct Patch {
@@ -43,7 +45,7 @@ namespace warco {
             double x, y, w, h;
             std::unique_ptr<PatchModel> model;
 
-            Patch(double x, double y, double w, double h);
+            Patch(double x, double y, double w, double h, double weight = 0.0);
         };
 
         std::vector<Patch> _patchmodels;

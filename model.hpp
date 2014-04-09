@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <vector>
 
 namespace cv {
@@ -22,8 +23,8 @@ namespace warco {
         unsigned predict(const cv::Mat& corr) const;
         std::vector<double> predict_probas(const cv::Mat& corr) const;
 
-        void save(const char* name) const;
-        void load(const char* name);
+        void save(std::string name) const;
+        void load(std::string name);
 
         unsigned nlbls() const;
 

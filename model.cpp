@@ -1,6 +1,7 @@
 #include "model.hpp"
 
 #include <cmath>
+#include <fstream>
 #include <stdexcept>
 
 #ifndef NDEBUG
@@ -11,6 +12,7 @@
 
 #include "libsvm/svm.h"
 #include "dists.hpp"
+#include "to_s.hpp"
 
 void warco::test_model()
 {
@@ -175,7 +177,7 @@ double warco::PatchModel::train(const std::vector<double>& C_crossval)
     return best;
 }
 
-void warco::PatchModel::save(const char* name) const
+void warco::PatchModel::save(std::string name) const
 {
     //Json::Value model;
     //int svm_get_nr_sv(const struct svm_model *model)
@@ -186,11 +188,36 @@ void warco::PatchModel::save(const char* name) const
     //   Each sv_indices[i] is in the range of [1, ..., num_traning_data].
     //
     // TODO.
+    svm_save_model((name + ".svm").c_str(), _svm);
+
+    std::ofstream of(name + ".model");
+    if(! of)
+        throw std::runtime_error("Error creating the model file " + name + ".model");
+
+    of << _mean << std::endl;
+    of << _corrs.size() << std::endl;
+    cv::FileStorage f(name + "corrs.yaml", cv::FileStorage::WRITE);
+    for(unsigned i = 0 ; i < _corrs.size() ; ++i) {
+        f << "corr" + to_s(i) << _corrs[i];
+    }
 }
 
-void warco::PatchModel::load(const char* name)
+void warco::PatchModel::load(std::string name)
 {
-    // TODO
+    _svm = svm_load_model((name + ".svm").c_str());
+
+    std::ifstream f(name + ".model");
+    if(! f)
+        throw std::runtime_error("Error opening the model file " + name + ".model");
+
+    f >> _mean;
+    unsigned ncorrs = 0;
+    f >> ncorrs;
+    _corrs.resize(ncorrs);
+    cv::FileStorage fs(name + "corrs.yaml", cv::FileStorage::READ);
+    for(unsigned i = 0 ; i < ncorrs ; ++i) {
+        fs["corr" + to_s(i)] >> _corrs[i];
+    }
 }
 
 unsigned warco::PatchModel::predict(const cv::Mat& corr) const
@@ -200,7 +227,10 @@ unsigned warco::PatchModel::predict(const cv::Mat& corr) const
 
     // We only need to have the kernel evaluation with support vectors.
     // TODO: Not always reallocate, but keep between calls.
-#if 1
+#if 0
+    // TODO: This doesn't work with saving/loading yet,
+    //       simply because we'd need to store each corr's id
+    //       in addition and add dummy ones in between.
     auto N = _svm->l;
     svm_node* nodes = new svm_node[N + 2];
     for(int i = 0 ; i < N ; ++i) {

@@ -9,8 +9,11 @@
 
 int main(int argc, char** argv)
 {
-    if(argc != 2) {
-        std::cout << "Please specify a configuration file which describes the dataset." << std::endl;
+    if(argc != 3) {
+        std::cout << "Usage: " << argv[0] << " CONF_FILE MODEL_NAME" << std::endl;
+        std::cout << std::endl;
+        std::cout << "CONF_FILE  Path to the JSON config file describing the dataset." << std::endl;
+        std::cout << "MODEL_NAME Name of the model which should be save. Is a directory." << std::endl;
         return 0;
     }
 
@@ -26,6 +29,10 @@ int main(int argc, char** argv)
     auto C = warco::readCrossvalCs(dataset);
     double avg_train = model.train(C, [](unsigned){ std::cout << "." << std::flush; });
     std::cout << std::endl << "Average training score *per patch*: " << avg_train << std::endl;
+
+    std::cout << "Saving the model... " << std::flush;
+    model.save(argv[2]);
+    std::cout << "Done. Cya in predictions!" << std::endl;
 
     return 0;
 }

@@ -1,18 +1,21 @@
 #include "warco.hpp"
 
+#include <fstream>
+#include <stdexcept>
+
 #include <opencv2/imgproc.hpp>
 
 #include "covcorr.hpp"
 #include "features.hpp"
 #include "model.hpp"
+#include "to_s.hpp"
 
 #ifndef NDEBUG
 #  include <iostream>
-#  include "to_s.hpp"
 #endif
 
-warco::Warco::Patch::Patch(double x, double y, double w, double h)
-    : weight(0.0)
+warco::Warco::Patch::Patch(double x, double y, double w, double h, double weight)
+    : weight(weight)
     , x(x), y(y), w(w), h(h)
     , model(new PatchModel())
 { }
@@ -22,6 +25,11 @@ warco::Warco::Warco(cv::FilterBank fb, const std::vector<warco::Patch>& patches)
 {
     for(auto p : patches)
         _patchmodels.push_back(Patch(p.x, p.y, p.w, p.h));
+}
+
+warco::Warco::Warco(std::string name)
+{
+    this->load(name);
 }
 
 warco::Warco::~Warco()
@@ -129,5 +137,41 @@ void warco::Warco::foreach_model(const cv::Mat& img, std::function<void(const Pa
 
     for(const auto& p : _patchmodels)
         fn(p, extract_corr(feats, p.x*img.cols, p.y*img.rows, p.w*img.cols, p.h*img.rows));
+}
+
+void warco::Warco::load(std::string name)
+{
+    _patchmodels.clear();
+
+    _fb.load((name + "/filterbank").c_str());
+
+    std::ifstream f(name + "/warco");
+    if(! f)
+        throw std::runtime_error("Couldn't load warco file '" + name + "/warco'");
+
+    unsigned n;
+    double weight, x, y, w, h;
+    f >> n;
+    for(unsigned i = 0 ; i < n ; ++i) {
+        f >> weight >> x >> y >> w >> h;
+        _patchmodels.push_back(Patch(x, y, w, h, weight));
+        _patchmodels.back().model->load(name + "/patch" + to_s(i));
+    }
+}
+
+void warco::Warco::save(std::string name) const
+{
+    _fb.save((name + "/filterbank").c_str());
+
+    std::ofstream of(name + "/warco");
+    if(! of)
+        throw std::runtime_error("Couldn't create warco file '" + name + "/warco'");
+
+    unsigned i = 0;
+    of << _patchmodels.size() << std::endl;
+    for(const auto& p : _patchmodels) {
+        of << std::endl << p.weight << " " << p.x << " " << p.y << " " << p.w << " " << p.h;
+        p.model->save(name + "/patch" + to_s(i++));
+    }
 }
 
