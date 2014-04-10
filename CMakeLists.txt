@@ -25,6 +25,12 @@ if(NOT OPENCV_CORE_FOUND OR NOT OPENCV_HIGHGUI_FOUND OR NOT OPENCV_IMGPROC_FOUND
 endif()
 include_directories(${OpenCV_INCLUDE_DIRS})
 
+FIND_PACKAGE(OpenMP)
+if(OPENMP_FOUND)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif()
+
 set(LIB_SRC
     cvutils.cpp
     cvutils.hpp

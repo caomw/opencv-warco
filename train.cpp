@@ -25,8 +25,8 @@ int main(int argc, char** argv)
         model.add_sample(image, lbl);
     });
 
-    std::cout << "Training model" << std::flush;
     auto C = warco::readCrossvalCs(dataset);
+    std::cout << "Training model" << std::flush;
     double avg_train = model.train(C, [](unsigned){ std::cout << "." << std::flush; });
     std::cout << std::endl << "Average training score *per patch*: " << avg_train << std::endl;
 

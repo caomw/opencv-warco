@@ -45,7 +45,14 @@ void warco::Warco::add_sample(const cv::Mat& img, unsigned label)
 double warco::Warco::train(const std::vector<double>& cvC, std::function<void(unsigned)> progress)
 {
     double w_tot = 0.0;
+#ifdef _OPENMP
+    const unsigned s = _patchmodels.size();
+    #pragma omp parallel for reduction(+:w_tot)
+    for(unsigned i = 0 ; i < s ; ++i) {
+        auto& patch = _patchmodels[i];
+#else
     for(auto& patch : _patchmodels) {
+#endif
         patch.weight = patch.model->train(cvC);
         w_tot += patch.weight;
 
@@ -80,6 +87,10 @@ unsigned warco::Warco::predict(const cv::Mat& img) const
 
     this->foreach_model(img, [&votes](const Patch& patch, const cv::Mat& corr) {
         unsigned pred = patch.model->predict(corr);
+
+#ifdef _OPENMP
+        #pragma omp critical
+#endif
         votes[pred] += patch.weight;
 
 #ifndef NDEBUG
@@ -106,6 +117,9 @@ unsigned warco::Warco::predict_proba(const cv::Mat& img) const
     this->foreach_model(img, [&probas](const Patch& patch, const cv::Mat& corr) {
         auto pred = patch.model->predict_probas(corr);
 
+#ifdef _OPENMP
+        #pragma omp critical
+#endif
         for(unsigned i = 0 ; i < probas.size() ; ++i)
             probas[i] += pred[i] * patch.weight;
 
@@ -135,8 +149,16 @@ void warco::Warco::foreach_model(const cv::Mat& img, std::function<void(const Pa
 {
     auto feats = warco::mkfeats(img, _fb);
 
-    for(const auto& p : _patchmodels)
+#ifdef _OPENMP
+    const int s = _patchmodels.size();
+    #pragma omp parallel for
+    for(int i = 0 ; i < s ; ++i) {
+        const auto& p = _patchmodels[i];
+#else
+    for(const auto& p : _patchmodels) {
+#endif
         fn(p, extract_corr(feats, p.x*img.cols, p.y*img.rows, p.w*img.cols, p.h*img.rows));
+    }
 }
 
 void warco::Warco::load(std::string name)
