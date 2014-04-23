@@ -1,5 +1,7 @@
 #include "covcorr.hpp"
 
+#include <stdexcept>
+
 #include <opencv2/opencv.hpp>
 
 #include "cvutils.hpp"

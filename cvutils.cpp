@@ -1,5 +1,7 @@
 #include "cvutils.hpp"
 
+#include <stdexcept>
+
 #include <opencv2/opencv.hpp>
 
 cv::Mat warco::eig_fn(const cv::Mat& m, std::function<double (double)> fn)

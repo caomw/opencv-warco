@@ -3,8 +3,6 @@
 #include <fstream>
 #include <stdexcept>
 
-#include <opencv2/imgproc.hpp>
-
 #include "covcorr.hpp"
 #include "features.hpp"
 #include "model.hpp"
