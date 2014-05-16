@@ -17,7 +17,8 @@ int main(int argc, char** argv)
     Json::Value dataset = warco::readDataset(argv[1]);
     auto patches = warco::readPatches(dataset);
     auto fb = cv::FilterBank(dataset["filterbank"].asCString());
-    warco::Warco model(fb, patches);
+    auto dfn = dataset.get("dist", "cbh").asString();
+    warco::Warco model(fb, patches, dfn);
     warco::foreach_img(dataset, "train", [&model](unsigned lbl, const cv::Mat& image, std::string) {
         model.add_sample(image, lbl);
     });

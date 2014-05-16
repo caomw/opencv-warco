@@ -3,6 +3,9 @@
 #include <fstream>
 #include <stdexcept>
 
+// Only for resize.
+#include <opencv2/imgproc.hpp>
+
 #include "covcorr.hpp"
 #include "features.hpp"
 #include "model.hpp"
@@ -12,17 +15,17 @@
 #  include <iostream>
 #endif
 
-warco::Warco::Patch::Patch(double x, double y, double w, double h, double weight)
+warco::Warco::Patch::Patch(double x, double y, double w, double h, std::string distfname, double weight)
     : weight(weight)
     , x(x), y(y), w(w), h(h)
-    , model(new PatchModel())
+    , model(new PatchModel(distfname))
 { }
 
-warco::Warco::Warco(cv::FilterBank fb, const std::vector<warco::Patch>& patches)
+warco::Warco::Warco(cv::FilterBank fb, const std::vector<warco::Patch>& patches, std::string distfname)
     : _fb(fb)
 {
     for(auto p : patches)
-        _patchmodels.push_back(Patch(p.x, p.y, p.w, p.h));
+        _patchmodels.push_back(Patch(p.x, p.y, p.w, p.h, distfname));
 }
 
 warco::Warco::Warco(std::string name)
@@ -180,7 +183,7 @@ void warco::Warco::load(std::string name)
     f >> n;
     for(unsigned i = 0 ; i < n ; ++i) {
         f >> weight >> x >> y >> w >> h;
-        _patchmodels.push_back(Patch(x, y, w, h, weight));
+        _patchmodels.push_back(Patch(x, y, w, h, "", weight));
         _patchmodels.back().model->load(name + "/patch" + to_s(i));
     }
 }

@@ -23,7 +23,7 @@ namespace warco {
 
     struct Warco {
 
-        Warco(cv::FilterBank fb, const std::vector<warco::Patch>& patches);
+        Warco(cv::FilterBank fb, const std::vector<warco::Patch>& patches, std::string distfname);
         Warco(std::string name);
         ~Warco();
 
@@ -45,7 +45,7 @@ namespace warco {
             double x, y, w, h;
             std::unique_ptr<PatchModel> model;
 
-            Patch(double x, double y, double w, double h, double weight = 0.0);
+            Patch(double x, double y, double w, double h, std::string distfname, double weight = 0.0);
         };
 
         std::vector<Patch> _patchmodels;

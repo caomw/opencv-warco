@@ -3,6 +3,9 @@
 #include <string>
 #include <vector>
 
+// For distfn_t
+#include "dists.hpp"
+
 namespace cv {
     class Mat;
 }
@@ -15,7 +18,7 @@ namespace warco {
     void test_model();
 
     struct PatchModel {
-        PatchModel();
+        PatchModel(std::string distname = "");
         ~PatchModel();
 
         void add_sample(const cv::Mat& corr, unsigned label);
@@ -34,6 +37,7 @@ namespace warco {
         svm_model* _svm;
         svm_problem* _prob;
         double _mean;
+        distfn_t _d;
 
         void free_svm();
     };

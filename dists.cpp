@@ -5,12 +5,44 @@
 
 #include "cvutils.hpp"
 
+warco::distfn_t warco::get_distfn(const std::string& name)
+{
+    if(name == "euclid") {
+        return dist_euc;
+    } else if(name == "cbh") {
+        return dist_cbh;
+    } else if(name == "geodesic") {
+        return dist_geo;
+    } else if(name == "my euclid") {
+        return dist_my_euc;
+    } else {
+        throw std::runtime_error("Unknown distance function: '" + name + "'");
+    }
+}
+
+std::string warco::get_name(distfn_t fn)
+{
+    const auto* pfn = fn.target<float(*)(const cv::Mat&, const cv::Mat&)>();
+
+    if(pfn && *pfn == dist_euc) {
+        return "euclid";
+    } else if(pfn && *pfn == dist_cbh) {
+        return "cbh";
+    } else if(pfn && *pfn == dist_geo) {
+        return "geodesic";
+    } else if(pfn && *pfn == dist_my_euc) {
+        return "my euclid";
+    } else {
+        throw std::runtime_error("unknown distance function in use!");
+    }
+}
+
 static cv::Mat logp_id(const cv::Mat& m)
 {
     return warco::eig_fn(m, [](double lambda) { return log(lambda); });
 }
 
-static float euc_sq(const cv::Mat& lA, cv::Mat& lB)
+static float euc_sq(const cv::Mat& lA, const cv::Mat& lB)
 {
     auto d = lB - lA;
     return trace(d*d)[0];
@@ -97,8 +129,10 @@ float warco::dist_geo(const cv::Mat& corrA, const cv::Mat& corrB)
     // TODO
     // Weird, from both the paper and logic these should not involve logp_id,
     // but from the code, they do.
-    cv::Mat lA = logp_id(corrA);
-    cv::Mat lB = logp_id(corrB);
+    //cv::Mat lA = logp_id(corrA);
+    //cv::Mat lB = logp_id(corrB);
+    cv::Mat lA = corrA;
+    cv::Mat lB = corrB;
 
     cv::Mat lA_inv_sqrt = warco::eig_fn(lA, [](double lambda) {
         return 1./sqrt(lambda);
@@ -138,10 +172,41 @@ static void test_geo()
     std::cout << "SUCCESS" << std::endl;
 }
 
+float warco::dist_my_euc(const cv::Mat& corrA, const cv::Mat& corrB)
+{
+    return sqrt(euc_sq(corrA, corrB));
+}
+
+static void test_my_euc()
+{
+    using warco::reldiff;
+
+    std::cout << "[My] Euclidean distance... " << std::flush;
+    cv::Mat A = warco::randspd(4,4),
+            B = warco::randspd(4,4);
+
+    double dAA = warco::dist_my_euc(A, A);
+    if(dAA > 1e-6) {
+        std::cerr << "Failed! (d(A,A)=" << dAA << " is not close to 0)" << std::endl;
+        throw std::runtime_error("Test assertion failed.");
+    }
+
+    double dAB = warco::dist_my_euc(A, B);
+    double dBA = warco::dist_my_euc(B, A);
+    if(reldiff(dAB, dBA) > 1e-6) {
+        std::cerr << "Failed! (rel diff (dAB, dBA) = " << reldiff(dAB, dBA) << " is too large)" << std::endl;
+        throw std::runtime_error("Test assertion failed.");
+    }
+
+    std::cout << "SUCCESS" << std::endl;
+}
+
 void warco::test_dists()
 {
     test_euc();
     test_cbh();
     test_geo();
+
+    test_my_euc();
 }
 

@@ -11,7 +11,6 @@
 #include <opencv2/opencv.hpp>
 
 #include "libsvm/svm.h"
-#include "dists.hpp"
 #include "to_s.hpp"
 
 void warco::test_model()
@@ -20,10 +19,12 @@ void warco::test_model()
     // Anyways, already tested in prototype^^
 }
 
-warco::PatchModel::PatchModel()
+warco::PatchModel::PatchModel(std::string dname)
     : _svm(nullptr)
     , _prob(nullptr)
     , _mean(0.0)
+    , _d(dname.empty() ? nullptr : get_distfn(dname))
+    // Note: the above assumes `load` is called ASAP.
 { }
 
 warco::PatchModel::~PatchModel()
@@ -82,7 +83,7 @@ double warco::PatchModel::train(const std::vector<double>& C_crossval)
     _mean = 0.0;
     for(unsigned i = 0 ; i < N ; ++i) {
         for(unsigned j = 0 ; j < i ; ++j) {
-            double d = dist_cbh(_corrs[i], _corrs[j]);
+            double d = _d(_corrs[i], _corrs[j]);
             _prob->x[i][1+j].index = 1+j;
             _prob->x[j][1+i].index = 1+i;
             _prob->x[i][1+j].value = d;
@@ -91,7 +92,7 @@ double warco::PatchModel::train(const std::vector<double>& C_crossval)
         }
         // The diagonal is outside of above loop to avoid
         // counting it twice (in the mean, mainly).
-        double d = dist_cbh(_corrs[i], _corrs[i]);
+        double d = _d(_corrs[i], _corrs[i]);
         _prob->x[i][1+i].index = 1+i;
         _prob->x[i][1+i].value = d;
         _mean += d;
@@ -194,6 +195,7 @@ void warco::PatchModel::save(std::string name) const
     if(! of)
         throw std::runtime_error("Error creating the model file " + name + ".model");
 
+    of << get_name(_d) << std::endl;
     of << _mean << std::endl;
     of << _corrs.size() << std::endl;
     cv::FileStorage f(name + "corrs.yaml", cv::FileStorage::WRITE);
@@ -209,6 +211,10 @@ void warco::PatchModel::load(std::string name)
     std::ifstream f(name + ".model");
     if(! f)
         throw std::runtime_error("Error opening the model file " + name + ".model");
+
+    std::string dfname;
+    getline(f, dfname);
+    _d = get_distfn(dfname);
 
     f >> _mean;
     unsigned ncorrs = 0;
@@ -236,7 +242,7 @@ unsigned warco::PatchModel::predict(const cv::Mat& corr) const
     for(int i = 0 ; i < N ; ++i) {
         int iSV = _svm->sv_indices[i];
         // -1 because in the case of a kernel they start at 1!
-        double d = dist_cbh(this->_corrs[iSV-1], corr);
+        double d = _d(this->_corrs[iSV-1], corr);
         nodes[1+i].index = iSV;
         nodes[1+i].value = std::exp(-d / _mean);
     }
@@ -246,7 +252,7 @@ unsigned warco::PatchModel::predict(const cv::Mat& corr) const
     auto N = _corrs.size();
     svm_node* nodes = new svm_node[N+2];
     for(unsigned i = 0 ; i < N ; ++i) {
-        double d = dist_cbh(this->_corrs[i], corr);
+        double d = _d(this->_corrs[i], corr);
         nodes[1+i].index = 1+i;
         nodes[1+i].value = std::exp(-d / _mean);
     }
@@ -271,7 +277,7 @@ std::vector<double> warco::PatchModel::predict_probas(const cv::Mat& corr) const
     auto N = _corrs.size();
     svm_node* nodes = new svm_node[N+2];
     for(unsigned i = 0 ; i < N ; ++i) {
-        double d = dist_cbh(this->_corrs[i], corr);
+        double d = _d(this->_corrs[i], corr);
         nodes[1+i].index = 1+i;
         nodes[1+i].value = std::exp(-d / _mean);
     }
