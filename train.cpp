@@ -22,12 +22,18 @@ int main(int argc, char** argv)
     auto fb = cv::FilterBank(dataset["filterbank"].asCString());
     auto dfn = dataset.get("dist", "cbh").asString();
     warco::Warco model(fb, patches, dfn);
+
+    std::cout << "Loading images... " << std::flush;
     warco::foreach_img(dataset, "train", [&model](unsigned lbl, const cv::Mat& image, std::string) {
         model.add_sample(image, lbl);
     });
+    std::cout << "Done" << std::endl;
 
     auto C = warco::readCrossvalCs(dataset);
-    std::cout << "Training model" << std::flush;
+    std::cout << "Training model with:" << std::endl
+        << "- filterbank: " << dataset["filterbank"].asString() << std::endl
+        << "- distance: " << dfn << std::endl
+        << "- #patches: " << patches.size() << std::endl;
     double avg_train = model.train(C, [](unsigned){ std::cout << "." << std::flush; });
     std::cout << std::endl << "Average training score *per patch*: " << avg_train << std::endl;
 
