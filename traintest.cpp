@@ -14,7 +14,7 @@ int main(int argc, char** argv)
         return 0;
     }
 
-    Json::Value dataset = warco::readDataset(argv[1]);
+    Json::Value dataset = warco::readJson(argv[1]);
     auto patches = warco::readPatches(dataset);
     auto fb = cv::FilterBank(dataset["filterbank"].asCString());
     auto dfn = dataset.get("dist", "cbh").asString();
