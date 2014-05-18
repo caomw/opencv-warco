@@ -21,6 +21,7 @@ namespace warco {
         return ref == 0.0 ? 0.0 : std::abs(a - b) / ref;
     }
 
+    void test_cv_utils();
 
 } // namespace warco
 
