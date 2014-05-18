@@ -111,6 +111,9 @@ static cv::Mat cov2corr(const cv::Mat& cov)
 
     // now, make a corr out of this.
 
+    // TODO: This is actually done using the globally maximal
+    //       variances vector of the trainset in the original WARCO.
+
     std::vector<float> stddev(nrvo.cols);
     // TODO: Doesn't work. Why?
     //sqrt(nrvo.diag(), stddev);
