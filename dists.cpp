@@ -5,6 +5,20 @@
 
 #include "cvutils.hpp"
 
+// Randomly generated, but computed using original matlab implementation.
+static cv::Mat wA = (cv::Mat_<double>(4,4) <<
+    4.6503810, -0.8571707,  0.5054186, -0.6182507,
+    -0.8571707,  3.5171059,  0.2891554,  1.4221318,
+    0.5054186,  0.2891554,  3.6702419, -0.2359455,
+    -0.6182507,  1.4221318, -0.2359455,  4.1547181
+);
+static cv::Mat wB = (cv::Mat_<double>(4,4) <<
+    5.8768365,  2.1580387, -2.0379778,  2.1673869,
+    2.1580387,  9.7772208, -0.2766553, -1.1106845,
+    -2.0379778, -0.2766553,  7.6452496,  0.0017575,
+    2.1673869, -1.1106845,  0.0017575, 11.1753981
+);
+
 warco::distfn_t warco::get_distfn(const std::string& name)
 {
     if(name == "euclid") {
@@ -42,6 +56,27 @@ static cv::Mat logp_id(const cv::Mat& m)
     return warco::eig_fn(m, [](double lambda) { return log(lambda); });
 }
 
+static void test_logp_id()
+{
+    std::cout << "logp_id... " << std::flush;
+
+    warco::assert_mat_almost_eq(logp_id(wA), (cv::Mat_<double>(4,4) <<
+        1.5033978, -0.2045823,  0.1300535, -0.1046505,
+       -0.2045823,  1.1510779,  0.1123214,  0.3851847,
+        0.1300535,  0.1123214,  1.2840035, -0.0731576,
+       -0.1046505,  0.3851847, -0.0731576,  1.3458774
+    ));
+
+    warco::assert_mat_almost_eq(logp_id(wB), (cv::Mat_<double>(4,4) <<
+        1.6013708,  0.3237514, -0.3289237,  0.3071247,
+        0.3237514,  2.2303997,  0.0127973, -0.1470679,
+       -0.3289237,  0.0127973,  1.9869731,  0.0403853,
+        0.3071247, -0.1470679,  0.0403853,  2.3704253
+    ));
+
+    std::cout << "SUCCESS" << std::endl;
+}
+
 static float euc_sq(const cv::Mat& lA, const cv::Mat& lB)
 {
     auto d = lB - lA;
@@ -75,6 +110,18 @@ static void test_euc()
     double dBA = warco::dist_euc(B, A);
     if(reldiff(dAB, dBA) > 1e-6) {
         std::cerr << "Failed! (rel diff (dAB, dBA) = " << reldiff(dAB, dBA) << " is too large)" << std::endl;
+        throw std::runtime_error("Test assertion failed.");
+    }
+
+    double dI1 = warco::dist_cbh(cv::Mat::eye(4, 4, CV_32F), 2*cv::Mat::eye(4, 4, CV_32F));
+    if(reldiff(dI1, 1.386294) > 1e-6) {
+        std::cerr << "Failed! (rel diff (dI1, 1.386294) = " << reldiff(dI1, 1.386294) << " is too large)" << std::endl;
+        throw std::runtime_error("Test assertion failed.");
+    }
+
+    double dwAwB = warco::dist_euc(wA, wB);
+    if(reldiff(dwAwB, 2.156221) > 1e-6) {
+        std::cerr << "Failed! (rel diff (dwAwB=" << dwAwB << ", 2.156221) = " << reldiff(dwAwB, 2.156221) << " is too large)" << std::endl;
         throw std::runtime_error("Test assertion failed.");
     }
 
@@ -118,6 +165,18 @@ static void test_cbh()
     double dBA = warco::dist_cbh(B, A);
     if(reldiff(dAB, dBA) > 1e-6) {
         std::cerr << "Failed! (rel diff (dAB, dBA) = " << reldiff(dAB, dBA) << " is too large)" << std::endl;
+        throw std::runtime_error("Test assertion failed.");
+    }
+
+    double dI1 = warco::dist_cbh(cv::Mat::eye(4, 4, CV_32F), 2*cv::Mat::eye(4, 4, CV_32F));
+    if(reldiff(dI1, 1.386294) > 1e-6) {
+        std::cerr << "Failed! (rel diff (dI1, 1.386294) = " << reldiff(dI1, 1.386294) << " is too large)" << std::endl;
+        throw std::runtime_error("Test assertion failed.");
+    }
+
+    double dwAwB = warco::dist_cbh(wA, wB);
+    if(reldiff(dwAwB, 2.156895) > 1e-6) {
+        std::cerr << "Failed! (rel diff (dwAwB=" << dwAwB << ", 2.156895) = " << reldiff(dwAwB, 2.156895) << " is too large)" << std::endl;
         throw std::runtime_error("Test assertion failed.");
     }
 
@@ -169,6 +228,18 @@ static void test_geo()
         throw std::runtime_error("Test assertion failed.");
     }
 
+    double dI1 = warco::dist_geo(cv::Mat::eye(4, 4, CV_32F), 2*cv::Mat::eye(4, 4, CV_32F));
+    if(reldiff(dI1, 1.386294) > 1e-6) {
+        std::cerr << "Failed! (rel diff (dI1, 1.386294) = " << reldiff(dI1, 1.386294) << " is too large)" << std::endl;
+        throw std::runtime_error("Test assertion failed.");
+    }
+
+    double dwAwB = warco::dist_geo(wA, wB);
+    if(reldiff(dwAwB, 2.1575107) > 1e-6) {
+        std::cerr << "Failed! (rel diff (dwAwB=" << dwAwB << ", 2.1575107) = " << reldiff(dwAwB, 2.1575107) << " is too large)" << std::endl;
+        throw std::runtime_error("Test assertion failed.");
+    }
+
     std::cout << "SUCCESS" << std::endl;
 }
 
@@ -203,6 +274,8 @@ static void test_my_euc()
 
 void warco::test_dists()
 {
+    test_logp_id();
+
     test_euc();
     test_cbh();
     test_geo();
