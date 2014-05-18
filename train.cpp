@@ -34,6 +34,7 @@ int main(int argc, char** argv)
         << "- filterbank: " << dataset["filterbank"].asString() << std::endl
         << "- distance: " << dfn << std::endl
         << "- #patches: " << patches.size() << std::endl;
+    model.prepare();
     double avg_train = model.train(C, [](unsigned){ std::cout << "." << std::flush; });
     std::cout << std::endl << "Average training score *per patch*: " << avg_train << std::endl;
 

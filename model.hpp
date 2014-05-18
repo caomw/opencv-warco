@@ -26,6 +26,9 @@ namespace warco {
         unsigned predict(const cv::Mat& corr) const;
         std::vector<double> predict_probas(const cv::Mat& corr) const;
 
+        void max_vars(std::vector<float>& vars) const;
+        void normalize_covs(const std::vector<float>& max_stddevs);
+
         void save(std::string name) const;
         void load(std::string name);
 

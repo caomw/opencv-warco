@@ -43,6 +43,21 @@ void warco::Warco::add_sample(const cv::Mat& img, unsigned label)
     });
 }
 
+void warco::Warco::prepare()
+{
+    _max_stddevs.clear();
+
+    // Get the maximal variances we can find.
+    for(auto& patch : _patchmodels)
+        patch.model->max_vars(_max_stddevs);
+
+    for(float& stddev : _max_stddevs)
+        stddev = sqrtf(stddev);
+
+    for(auto& patch : _patchmodels)
+        patch.model->normalize_covs(_max_stddevs);
+}
+
 double warco::Warco::train(const std::vector<double>& cvC, std::function<void(unsigned)> progress)
 {
     double w_tot = 0.0;
@@ -164,7 +179,10 @@ void warco::Warco::foreach_model(const cv::Mat& img, std::function<void(const Pa
 #else
     for(const auto& p : _patchmodels) {
 #endif
-        fn(p, extract_corr(feats, p.x*img50.cols, p.y*img50.rows, p.w*img50.cols, p.h*img50.rows));
+        auto cov = extract_cov(feats, p.x*img50.cols, p.y*img50.rows, p.w*img50.cols, p.h*img50.rows);
+        if(! _max_stddevs.empty())
+            warco::normalize_cov(cov, _max_stddevs);
+        fn(p, cov);
     }
 }
 
@@ -179,6 +197,11 @@ void warco::Warco::load(std::string name)
         throw std::runtime_error("Couldn't load warco file '" + name + "/warco'");
 
     unsigned n;
+    f >> n;
+    _max_stddevs.resize(n);
+    for(unsigned i = 0 ; i < n ; ++i)
+        f >> _max_stddevs[i];
+
     double weight, x, y, w, h;
     f >> n;
     for(unsigned i = 0 ; i < n ; ++i) {
@@ -195,6 +218,11 @@ void warco::Warco::save(std::string name) const
     std::ofstream of(name + "/warco");
     if(! of)
         throw std::runtime_error("Couldn't create warco file '" + name + "/warco'");
+
+    of << _max_stddevs.size() << " ";
+    for(auto s : _max_stddevs)
+        of << s << " ";
+    of << std::endl;
 
     unsigned i = 0;
     of << _patchmodels.size() << std::endl;

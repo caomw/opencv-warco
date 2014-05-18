@@ -10,6 +10,7 @@
 
 #include <opencv2/opencv.hpp>
 
+#include "covcorr.hpp"
 #include "libsvm/svm.h"
 #include "to_s.hpp"
 
@@ -48,6 +49,25 @@ void warco::PatchModel::add_sample(const cv::Mat& corr, unsigned label)
 {
     _corrs.push_back(corr);
     _lbls.push_back(static_cast<double>(label));
+}
+
+void warco::PatchModel::max_vars(std::vector<float>& vars) const
+{
+    if(vars.empty())
+        for(int i = 0 ; i < _corrs.front().cols ; ++i)
+            vars.push_back(0.0);
+
+    // TODO: test!
+    for(auto& corr : _corrs) {
+        for(unsigned i = 0 ; i < vars.size() ; ++i)
+            vars[i] = std::max(vars[i], corr.at<float>(i,i));
+    }
+}
+
+void warco::PatchModel::normalize_covs(const std::vector<float>& max_stddevs)
+{
+    for(auto& corr : _corrs)
+        warco::normalize_cov(corr, max_stddevs);
 }
 
 double warco::PatchModel::train(const std::vector<double>& C_crossval)

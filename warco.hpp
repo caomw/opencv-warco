@@ -29,6 +29,8 @@ namespace warco {
 
         void add_sample(const cv::Mat& img, unsigned label);
 
+        void prepare();
+
         double train(const std::vector<double>& cv_C, std::function<void(unsigned max)> progress = [](float){});
         unsigned predict(const cv::Mat& img) const;
         unsigned predict_proba(const cv::Mat& img) const;
@@ -49,6 +51,7 @@ namespace warco {
         };
 
         std::vector<Patch> _patchmodels;
+        std::vector<float> _max_stddevs;
 
         cv::FilterBank _fb;
 
