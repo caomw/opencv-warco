@@ -3,7 +3,7 @@
 #include <string>
 #include <vector>
 
-// For distfn_t
+// For Distance
 #include "dists.hpp"
 
 namespace cv {
@@ -22,9 +22,10 @@ namespace warco {
         ~PatchModel();
 
         void add_sample(const cv::Mat& corr, unsigned label);
+        bool prepare();
         double train(const std::vector<double>& C_crossval = {0.1, 1., 10.});
-        unsigned predict(const cv::Mat& corr) const;
-        std::vector<double> predict_probas(const cv::Mat& corr) const;
+        unsigned predict(cv::Mat& corr) const;
+        std::vector<double> predict_probas(cv::Mat& corr) const;
 
         void max_vars(std::vector<float>& vars) const;
         void normalize_covs(const std::vector<float>& max_stddevs);
@@ -40,7 +41,7 @@ namespace warco {
         svm_model* _svm;
         svm_problem* _prob;
         double _mean;
-        distfn_t _d;
+        Distance::Ptr _d;
 
         void free_svm();
     };

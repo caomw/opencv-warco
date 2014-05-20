@@ -3,6 +3,7 @@
 
 #include "json/json.h"
 
+#include "dists.hpp"
 #include "filterbank.hpp"
 #include "mainutils.hpp"
 #include "warco.hpp"
@@ -35,7 +36,7 @@ int main(int argc, char** argv)
         << "- distance: " << dfn << std::endl
         << "- #patches: " << patches.size() << std::endl;
     model.prepare();
-    double avg_train = model.train(C, [](unsigned){ std::cout << "." << std::flush; });
+    double avg_train = model.train(C, [](){ std::cout << "." << std::flush; });
     std::cout << std::endl << "Average training score *per patch*: " << avg_train << std::endl;
 
     std::cout << "Saving the model... " << std::flush;

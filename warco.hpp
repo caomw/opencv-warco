@@ -31,13 +31,12 @@ namespace warco {
 
         void prepare();
 
-        double train(const std::vector<double>& cv_C, std::function<void(unsigned max)> progress = [](float){});
+        double train(const std::vector<double>& cv_C, std::function<void()> progress = [](){});
         unsigned predict(const cv::Mat& img) const;
         unsigned predict_proba(const cv::Mat& img) const;
 
         unsigned nlbl() const;
 
-        // TODO
         void save(std::string name) const;
         void load(std::string name);
 
@@ -55,7 +54,7 @@ namespace warco {
 
         cv::FilterBank _fb;
 
-        void foreach_model(const cv::Mat& img, std::function<void(const Patch& patch, const cv::Mat& corr)> fn) const;
+        void foreach_model(const cv::Mat& img, std::function<void(const Patch& patch, cv::Mat& corr)> fn) const;
     };
 
 } // namespace warco
