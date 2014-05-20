@@ -23,7 +23,7 @@ warco::PatchModel::PatchModel(std::string dname)
     : _svm(nullptr)
     , _prob(nullptr)
     , _mean(0.0)
-    , _d(dname.empty() ? nullptr : get_distfn(dname))
+    , _d(dname.empty() ? nullptr : Distance::create(dname))
     // Note: the above assumes `load` is called ASAP.
 { }
 
@@ -48,6 +48,17 @@ void warco::PatchModel::add_sample(const cv::Mat& corr, unsigned label)
 {
     _corrs.push_back(corr);
     _lbls.push_back(static_cast<double>(label));
+}
+
+bool warco::PatchModel::prepare()
+{
+    if(_d->canprep()) {
+        for(auto& corr : _corrs)
+            _d->prepare(corr);
+        return true;
+    }
+
+    return false;
 }
 
 double warco::PatchModel::train(const std::vector<double>& C_crossval)
@@ -83,7 +94,7 @@ double warco::PatchModel::train(const std::vector<double>& C_crossval)
     _mean = 0.0;
     for(unsigned i = 0 ; i < N ; ++i) {
         for(unsigned j = 0 ; j < i ; ++j) {
-            double d = _d(_corrs[i], _corrs[j]);
+            double d = (*_d)(_corrs[i], _corrs[j]);
             _prob->x[i][1+j].index = 1+j;
             _prob->x[j][1+i].index = 1+i;
             _prob->x[i][1+j].value = d;
@@ -92,7 +103,7 @@ double warco::PatchModel::train(const std::vector<double>& C_crossval)
         }
         // The diagonal is outside of above loop to avoid
         // counting it twice (in the mean, mainly).
-        double d = _d(_corrs[i], _corrs[i]);
+        double d = (*_d)(_corrs[i], _corrs[i]);
         _prob->x[i][1+i].index = 1+i;
         _prob->x[i][1+i].value = d;
         _mean += d;
@@ -195,7 +206,7 @@ void warco::PatchModel::save(std::string name) const
     if(! of)
         throw std::runtime_error("Error creating the model file " + name + ".model");
 
-    of << get_name(_d) << std::endl;
+    of << _d->name() << std::endl;
     of << _mean << std::endl;
     of << _corrs.size() << std::endl;
     cv::FileStorage f(name + "corrs.yaml", cv::FileStorage::WRITE);
@@ -214,7 +225,7 @@ void warco::PatchModel::load(std::string name)
 
     std::string dfname;
     getline(f, dfname);
-    _d = get_distfn(dfname);
+    _d = Distance::create(dfname);
 
     f >> _mean;
     unsigned ncorrs = 0;
@@ -226,10 +237,12 @@ void warco::PatchModel::load(std::string name)
     }
 }
 
-unsigned warco::PatchModel::predict(const cv::Mat& corr) const
+unsigned warco::PatchModel::predict(cv::Mat& corr) const
 {
     if(! _svm)
         throw std::runtime_error("Load model before predicting plx!");
+
+    _d->prepare(corr);
 
     // We only need to have the kernel evaluation with support vectors.
     // TODO: Not always reallocate, but keep between calls.
@@ -242,7 +255,7 @@ unsigned warco::PatchModel::predict(const cv::Mat& corr) const
     for(int i = 0 ; i < N ; ++i) {
         int iSV = _svm->sv_indices[i];
         // -1 because in the case of a kernel they start at 1!
-        double d = _d(this->_corrs[iSV-1], corr);
+        double d = (*_d)(this->_corrs[iSV-1], corr);
         nodes[1+i].index = iSV;
         nodes[1+i].value = std::exp(-d / _mean);
     }
@@ -252,7 +265,7 @@ unsigned warco::PatchModel::predict(const cv::Mat& corr) const
     auto N = _corrs.size();
     svm_node* nodes = new svm_node[N+2];
     for(unsigned i = 0 ; i < N ; ++i) {
-        double d = _d(this->_corrs[i], corr);
+        double d = (*_d)(this->_corrs[i], corr);
         nodes[1+i].index = 1+i;
         nodes[1+i].value = std::exp(-d / _mean);
     }
@@ -267,17 +280,19 @@ unsigned warco::PatchModel::predict(const cv::Mat& corr) const
     return label;
 }
 
-std::vector<double> warco::PatchModel::predict_probas(const cv::Mat& corr) const
+std::vector<double> warco::PatchModel::predict_probas(cv::Mat& corr) const
 {
     // TODO: might want to get that one as an output argument
     //       such that if used in an inner loop doesn't get perma-reallocated.
     std::vector<double> nrvo(svm_get_nr_class(_svm), 0.0);
 
+    _d->prepare(corr);
+
     // TODO also see comments in predict
     auto N = _corrs.size();
     svm_node* nodes = new svm_node[N+2];
     for(unsigned i = 0 ; i < N ; ++i) {
-        double d = _d(this->_corrs[i], corr);
+        double d = (*_d)(this->_corrs[i], corr);
         nodes[1+i].index = 1+i;
         nodes[1+i].value = std::exp(-d / _mean);
     }

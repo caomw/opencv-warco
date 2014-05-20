@@ -38,12 +38,12 @@ warco::Warco::~Warco()
 
 void warco::Warco::add_sample(const cv::Mat& img, unsigned label)
 {
-    this->foreach_model(img, [label](const Patch& patch, const cv::Mat& corr) {
+    this->foreach_model(img, [label](const Patch& patch, cv::Mat& corr) {
         patch.model->add_sample(corr, label);
     });
 }
 
-double warco::Warco::train(const std::vector<double>& cvC, std::function<void(unsigned)> progress)
+double warco::Warco::train(const std::vector<double>& cvC, std::function<void()> progress)
 {
     double w_tot = 0.0;
 #ifdef _OPENMP
@@ -54,17 +54,20 @@ double warco::Warco::train(const std::vector<double>& cvC, std::function<void(un
 #else
     for(auto& patch : _patchmodels) {
 #endif
+        if(patch.model->prepare())
+            progress();
+
         patch.weight = patch.model->train(cvC);
         w_tot += patch.weight;
 
-        progress(_patchmodels.size() + 1);
+        progress();
     }
 
     for(auto& patch : _patchmodels) {
         patch.weight /= w_tot;
     }
 
-    progress(_patchmodels.size() + 1);
+    progress();
 
 #ifndef NDEBUG
     if(getenv("WARCO_DEBUG")) {
@@ -86,7 +89,7 @@ unsigned warco::Warco::predict(const cv::Mat& img) const
 {
     std::vector<double> votes(this->nlbl(), 0.0);
 
-    this->foreach_model(img, [&votes](const Patch& patch, const cv::Mat& corr) {
+    this->foreach_model(img, [&votes](const Patch& patch, cv::Mat& corr) {
         unsigned pred = patch.model->predict(corr);
 
 #ifdef _OPENMP
@@ -115,7 +118,7 @@ unsigned warco::Warco::predict_proba(const cv::Mat& img) const
 {
     std::vector<double> probas(this->nlbl(), 0.0);
 
-    this->foreach_model(img, [&probas](const Patch& patch, const cv::Mat& corr) {
+    this->foreach_model(img, [&probas](const Patch& patch, cv::Mat& corr) {
         auto pred = patch.model->predict_probas(corr);
 
 #ifdef _OPENMP
@@ -146,7 +149,7 @@ unsigned warco::Warco::nlbl() const
     return _patchmodels.front().model->nlbls();
 }
 
-void warco::Warco::foreach_model(const cv::Mat& img, std::function<void(const Patch& patch, const cv::Mat& corr)> fn) const
+void warco::Warco::foreach_model(const cv::Mat& img, std::function<void(const Patch& patch, cv::Mat& corr)> fn) const
 {
     // TODO: take the actual size out of config.
     cv::Mat img50 = img;
@@ -164,7 +167,8 @@ void warco::Warco::foreach_model(const cv::Mat& img, std::function<void(const Pa
 #else
     for(const auto& p : _patchmodels) {
 #endif
-        fn(p, extract_corr(feats, p.x*img50.cols, p.y*img50.rows, p.w*img50.cols, p.h*img50.rows));
+        cv::Mat corr = extract_corr(feats, p.x*img50.cols, p.y*img50.rows, p.w*img50.cols, p.h*img50.rows);
+        fn(p, corr);
     }
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <functional>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -10,16 +11,25 @@ namespace cv {
 
 namespace warco {
 
-    typedef std::function<float(const cv::Mat&, const cv::Mat&)> distfn_t;
+    class Distance {
+    public:
+        typedef std::unique_ptr<Distance> Ptr;
 
-    distfn_t get_distfn(const std::string& name);
-    std::string get_name(distfn_t);
+        virtual ~Distance() {};
+
+        virtual bool canprep() const {return false;};
+        virtual void prepare(cv::Mat& /*cov*/) const {};
+        virtual float operator()(const cv::Mat& corrA, const cv::Mat& corrB) const = 0;
+
+        virtual std::string name() const = 0;
+
+        static Ptr create(std::string name);
+
+    protected:
+        Distance() {};
+    };
 
     void test_dists();
-    float dist_euc(const cv::Mat& corrA, const cv::Mat& corrB);
-    float dist_cbh(const cv::Mat& corrA, const cv::Mat& corrB);
-    float dist_geo(const cv::Mat& corrA, const cv::Mat& corrB);
 
-    float dist_my_euc(const cv::Mat& corrA, const cv::Mat& corrB);
 } // namespace warco
 
