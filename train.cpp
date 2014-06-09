@@ -10,11 +10,12 @@
 
 int main(int argc, char** argv)
 {
-    if(argc != 3) {
-        std::cout << "Usage: " << argv[0] << " CONF_FILE MODEL_NAME" << std::endl;
+    if(argc < 3 || 4 < argc) {
+        std::cout << "Usage: " << argv[0] << " CONF_FILE MODEL_NAME [DIST_DIR]" << std::endl;
         std::cout << std::endl;
         std::cout << "CONF_FILE  Path to the JSON config file describing the dataset." << std::endl;
         std::cout << "MODEL_NAME Name of the model which should be save. Is a directory." << std::endl;
+        std::cout << "DIST_DIR   Directory holding precomputed distances." << std::endl;
         return 0;
     }
 
@@ -32,6 +33,14 @@ int main(int argc, char** argv)
     std::cout << "Done" << std::endl;
 
     auto C = warco::readCrossvalCs(dataset);
+    if(argc == 4) {
+        std::cout << "Checking for cached distances... " << std::flush;
+        if(model.maybe_loaddists(argv[3]))
+            std::cout << "Found some" << std::endl;
+        else
+            std::cout << "None available" << std::endl;
+    }
+
     std::cout << "Training model with:" << std::endl
         << "- filterbank: " << dataset["filterbank"].asString() << std::endl
         << "- distance: " << dfn << std::endl

@@ -35,6 +35,7 @@ namespace warco {
 
         void save_covs(std::string name) const;
         void save_dists(std::string name) const;
+        bool maybe_loaddists(std::string name);
 
         unsigned nlbls() const;
 
@@ -47,6 +48,7 @@ namespace warco {
         Distance::Ptr _d;
 
         void free_svm();
+        void prepare_prob(unsigned N);
     };
 
 } // namespace warco

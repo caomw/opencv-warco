@@ -81,18 +81,10 @@ bool warco::PatchModel::prepare()
     return false;
 }
 
-double warco::PatchModel::train(const std::vector<double>& C_crossval)
+void warco::PatchModel::prepare_prob(unsigned N)
 {
-    this->free_svm();
-
-    // 1. Compute distance matrix
-    // 2. train SVM
-
-    auto N = _corrs.size();
-
     _prob = new svm_problem;
     _prob->l = N;
-    _prob->y = &_lbls[0];
 
     // Construct what will hold the distance/kernel "matrix"
     _prob->x = new svm_node*[N];
@@ -108,30 +100,43 @@ double warco::PatchModel::train(const std::vector<double>& C_crossval)
         // Make the last of each row be -1 as requested by the API.
         _prob->x[i][N+1].index = -1;
     }
+}
 
-    // Compute the Gram matrix first, but compute the mean in the same run,
-    // we'll need it to turn the matrix into a mercer kernel next.
-    _mean = 0.0;
-    for(unsigned i = 0 ; i < N ; ++i) {
-        for(unsigned j = 0 ; j < i ; ++j) {
-            double d = (*_d)(_corrs[i], _corrs[j]);
-            _prob->x[i][1+j].index = 1+j;
-            _prob->x[j][1+i].index = 1+i;
-            _prob->x[i][1+j].value = d;
-            _prob->x[j][1+i].value = d;
+double warco::PatchModel::train(const std::vector<double>& C_crossval)
+{
+    // 1. Compute distance matrix
+    // 2. train SVM
+
+    auto N = _corrs.size();
+
+    // But only compute distances if they haven't been preloaded.
+    if(!_prob) {
+        this->prepare_prob(N);
+
+        // Compute the Gram matrix first, but compute the mean in the same run,
+        // we'll need it to turn the matrix into a mercer kernel next.
+        _mean = 0.0;
+        for(unsigned i = 0 ; i < N ; ++i) {
+            for(unsigned j = 0 ; j < i ; ++j) {
+                double d = (*_d)(_corrs[i], _corrs[j]);
+                _prob->x[i][1+j].index = 1+j;
+                _prob->x[j][1+i].index = 1+i;
+                _prob->x[i][1+j].value = d;
+                _prob->x[j][1+i].value = d;
+                _mean += d;
+            }
+            // The diagonal is outside of above loop to avoid
+            // counting it twice (in the mean, mainly).
+            double d = (*_d)(_corrs[i], _corrs[i]);
+            _prob->x[i][1+i].index = 1+i;
+            _prob->x[i][1+i].value = d;
             _mean += d;
         }
-        // The diagonal is outside of above loop to avoid
-        // counting it twice (in the mean, mainly).
-        double d = (*_d)(_corrs[i], _corrs[i]);
-        _prob->x[i][1+i].index = 1+i;
-        _prob->x[i][1+i].value = d;
-        _mean += d;
+
+        _mean /= (N*(N+1)/2);
     }
 
-    _mean /= (N*(N+1)/2);
-
-    // Turn it into a mercer kernel next.
+    // Turn distances into a mercer kernel.
     for(unsigned i = 0 ; i < N ; ++i) {
         for(unsigned j = 0 ; j < i ; ++j) {
             double k = std::exp(-_prob->x[i][1+j].value / _mean);
@@ -141,6 +146,9 @@ double warco::PatchModel::train(const std::vector<double>& C_crossval)
         // Same story about the diagonal here.
         _prob->x[i][1+i].value = std::exp(-_prob->x[i][1+i].value / _mean);
     }
+
+    // Set the SVM target values.
+    _prob->y = &_lbls[0];
 
     // Now setup the SVM's parameters to use above kernel.
 
@@ -294,6 +302,45 @@ void warco::PatchModel::save_dists(std::string name) const
             std::cout << "," << std::flush;
         }
     }
+}
+
+bool warco::PatchModel::maybe_loaddists(std::string name)
+{
+    std::ifstream f(name + ".dists");
+    if(! f)
+        return false;
+
+    auto N = _corrs.size();
+    _mean = 0.0;
+    double d;
+
+    this->prepare_prob(N);
+
+    // Compute the Gram matrix first, but compute the mean in the same run,
+    // we'll need it to turn the matrix into a mercer kernel next.
+    for(unsigned i = 0 ; i < N ; ++i) {
+        for(unsigned j = 0 ; j < i ; ++j) {
+            f >> d;
+            _prob->x[i][1+j].index = 1+j;
+            _prob->x[j][1+i].index = 1+i;
+            _prob->x[i][1+j].value = d;
+            _prob->x[j][1+i].value = d;
+            _mean += d;
+        }
+        // The diagonal is outside of above loop to avoid
+        // counting it twice (in the mean, mainly).
+        f >> d;
+        _prob->x[i][1+i].index = 1+i;
+        _prob->x[i][1+i].value = d;
+        _mean += d;
+        // Skip all dem zeros.
+        for(unsigned j = i+1 ; j < N ; ++j)
+            f >> d;
+    }
+
+    _mean /= (N*(N+1)/2);
+
+    return !f.fail();
 }
 
 unsigned warco::PatchModel::predict(cv::Mat& corr) const

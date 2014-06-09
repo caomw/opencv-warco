@@ -30,6 +30,7 @@ namespace warco {
         void add_sample(const cv::Mat& img, unsigned label);
 
         void prepare();
+        bool maybe_loaddists(std::string name);
 
         double train(const std::vector<double>& cv_C, std::function<void()> progress = [](){});
         unsigned predict(const cv::Mat& img) const;

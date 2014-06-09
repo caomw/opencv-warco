@@ -9,8 +9,11 @@
 
 int main(int argc, char** argv)
 {
-    if(argc != 2) {
-        std::cout << "Please specify a configuration file which describes the dataset." << std::endl;
+    if(argc < 2 || 3 < argc) {
+        std::cout << "Usage: " << argv[0] << " CONF_FILE [DIST_DIR]" << std::endl;
+        std::cout << std::endl;
+        std::cout << "CONF_FILE Path to the JSON config file describing the dataset." << std::endl;
+        std::cout << "DIST_DIR  Folder holding precomputed distances." << std::endl;
         return 0;
     }
 
@@ -26,6 +29,14 @@ int main(int argc, char** argv)
         model.add_sample(image, lbl);
     });
     std::cout << "Done" << std::endl;
+
+    if(argc == 3) {
+        std::cout << "Checking for cached distances... " << std::flush;
+        if(model.maybe_loaddists(argv[2]))
+            std::cout << "Found some" << std::endl;
+        else
+            std::cout << "None available" << std::endl;
+    }
 
     std::cout << "Training model with:" << std::endl
         << "- filterbank: " << dataset["filterbank"].asString() << std::endl

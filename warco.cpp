@@ -58,6 +58,13 @@ void warco::Warco::prepare()
         patch.model->normalize_covs(_max_stddevs);
 }
 
+bool warco::Warco::maybe_loaddists(std::string name)
+{
+    return this->foreach_model([&name](PatchModel& model, unsigned i){
+            return model.maybe_loaddists(name + "/patch" + to_s(i));
+    });
+}
+
 double warco::Warco::train(const std::vector<double>& cvC, std::function<void()> progress)
 {
     double w_tot = 0.0;
