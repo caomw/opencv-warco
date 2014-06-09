@@ -22,6 +22,7 @@ int main(int argc, char** argv)
     auto fb = cv::FilterBank(dataset["filterbank"].asCString());
     auto dfn = dataset.get("dist", "cbh").asString();
     bool cov = dataset.get("cov", "true").asBool();
+    auto C = warco::readCrossvalCs(dataset);
     warco::Warco model(fb, patches, dfn);
 
     std::cout << "Loading images... " << std::flush;
@@ -42,8 +43,8 @@ int main(int argc, char** argv)
         << "- filterbank: " << dataset["filterbank"].asString() << std::endl
         << "- distance: " << dfn << std::endl
         << "- #patches: " << patches.size() << std::endl
+        << "- #Cs: " << C.size() << std::endl
         << "- " << (cov ? "covariances" : "correlations") << std::endl;
-    auto C = warco::readCrossvalCs(dataset);
 
     if(!cov)
         model.prepare();
