@@ -44,8 +44,17 @@ static void print_string_stdout(const char *s)
 	fflush(stdout);
 }
 static void (*svm_print_string) (const char *) = &print_string_stdout;
-#if 1
+#if 0
 static void info(const char *fmt,...)
+{
+	char buf[BUFSIZ];
+	va_list ap;
+	va_start(ap,fmt);
+	vsprintf(buf,fmt,ap);
+	va_end(ap);
+	(*svm_print_string)(buf);
+}
+static void danger(const char *fmt,...)
 {
 	char buf[BUFSIZ];
 	va_list ap;
@@ -56,6 +65,15 @@ static void info(const char *fmt,...)
 }
 #else
 static void info(const char *fmt,...) {}
+static void danger(const char *fmt,...)
+{
+	char buf[BUFSIZ];
+	va_list ap;
+	va_start(ap,fmt);
+	vsprintf(buf,fmt,ap);
+	va_end(ap);
+	(*svm_print_string)(buf);
+}
 #endif
 
 //
@@ -534,7 +552,7 @@ void Solver::reconstruct_gradient()
 			nr_free++;
 
 	if(2*nr_free < active_size)
-		info("\nWARNING: using -h 0 may be faster\n");
+		danger("\nWARNING: using -h 0 may be faster\n");
 
 	if (nr_free*l > 2*active_size*(l-active_size))
 	{
@@ -1863,13 +1881,13 @@ static void sigmoid_train(
 
 		if (stepsize < min_step)
 		{
-			info("Line search fails in two-class probability estimates\n");
+			danger("Line search fails in two-class probability estimates\n");
 			break;
 		}
 	}
 
 	if (iter>=max_iter)
-		info("Reaching maximal iterations in two-class probability estimates\n");
+		danger("Reaching maximal iterations in two-class probability estimates\n");
 	free(t);
 }
 
@@ -1941,7 +1959,7 @@ static void multiclass_probability(int k, double **r, double *p)
 		}
 	}
 	if (iter>=max_iter)
-		info("Exceeds max_iter in multiclass_prob\n");
+		danger("Exceeds max_iter in multiclass_prob\n");
 	for(t=0;t<k;t++) free(Q[t]);
 	free(Q);
 	free(Qp);
@@ -2221,7 +2239,7 @@ svm_model *svm_train(const svm_problem *prob, const svm_parameter *param)
 		// group training data of the same class
 		svm_group_classes(prob,&nr_class,&label,&start,&count,perm);
 		if(nr_class == 1) 
-			info("WARNING: training data in only one class. See README for details.\n");
+			danger("WARNING: training data in only one class. See README for details.\n");
 		
 #ifdef _DENSE_REP
 		svm_node *x = Malloc(svm_node,l);
