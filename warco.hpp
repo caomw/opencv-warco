@@ -58,6 +58,8 @@ namespace warco {
         cv::FilterBank _fb;
 
         void foreach_model(const cv::Mat& img, std::function<void(const Patch& patch, cv::Mat& corr)> fn) const;
+        bool foreach_model(std::function<bool(const PatchModel& model, unsigned i)> fn) const;
+        bool foreach_model(std::function<bool(PatchModel& model, unsigned i)> fn);
     };
 
 } // namespace warco

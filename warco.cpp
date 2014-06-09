@@ -189,6 +189,41 @@ void warco::Warco::foreach_model(const cv::Mat& img, std::function<void(const Pa
     }
 }
 
+bool warco::Warco::foreach_model(std::function<bool(PatchModel&, unsigned)> fn)
+{
+    bool success = true;
+
+    const unsigned s = _patchmodels.size();
+#ifdef _OPENMP
+    #pragma omp parallel for reduction(&&:success)
+#endif
+    for(unsigned i = 0 ; i < s ; ++i) {
+        bool s = fn(*_patchmodels[i].model, i);
+        success = success && s;
+        std::cout << "." << std::flush;
+    }
+
+    return success;
+}
+
+// DAMNED C++ forcing us to implement things twice!
+bool warco::Warco::foreach_model(std::function<bool(const PatchModel&, unsigned)> fn) const
+{
+    bool success = true;
+
+    const unsigned s = _patchmodels.size();
+#ifdef _OPENMP
+    #pragma omp parallel for reduction(&&:success)
+#endif
+    for(unsigned i = 0 ; i < s ; ++i) {
+        bool s = fn(*_patchmodels[i].model, i);
+        success = success && s;
+        std::cout << "." << std::flush;
+    }
+
+    return success;
+}
+
 void warco::Warco::load(std::string name)
 {
     _patchmodels.clear();
@@ -237,27 +272,17 @@ void warco::Warco::save(std::string name) const
 
 void warco::Warco::save_covs(std::string name) const
 {
-    const int s = _patchmodels.size();
-#ifdef _OPENMP
-    #pragma omp parallel for
-#endif
-    for(int i = 0 ; i < s ; ++i) {
-        const auto& p = _patchmodels[i];
-        p.model->save_covs(name + "/patch" + to_s(i));
-        std::cout << "." << std::flush;
-    }
+    this->foreach_model([&name](const PatchModel& model, unsigned i) {
+        model.save_covs(name + "/patch" + to_s(i));
+        return true;
+    });
 }
 
 void warco::Warco::save_dists(std::string name) const
 {
-    const int s = _patchmodels.size();
-#ifdef _OPENMP
-    #pragma omp parallel for
-#endif
-    for(int i = 0 ; i < s ; ++i) {
-        const auto& p = _patchmodels[i];
-        p.model->save_dists(name + "/patch" + to_s(i));
-        std::cout << "." << std::flush;
-    }
+    this->foreach_model([&name](const PatchModel& model, unsigned i) {
+        model.save_dists(name + "/patch" + to_s(i));
+        return true;
+    });
 }
 
