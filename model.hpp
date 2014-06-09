@@ -33,6 +33,9 @@ namespace warco {
         void save(std::string name) const;
         void load(std::string name);
 
+        void save_covs(std::string name) const;
+        void save_dists(std::string name) const;
+
         unsigned nlbls() const;
 
     protected:

@@ -235,3 +235,29 @@ void warco::Warco::save(std::string name) const
     }
 }
 
+void warco::Warco::save_covs(std::string name) const
+{
+    const int s = _patchmodels.size();
+#ifdef _OPENMP
+    #pragma omp parallel for
+#endif
+    for(int i = 0 ; i < s ; ++i) {
+        const auto& p = _patchmodels[i];
+        p.model->save_covs(name + "/patch" + to_s(i));
+        std::cout << "." << std::flush;
+    }
+}
+
+void warco::Warco::save_dists(std::string name) const
+{
+    const int s = _patchmodels.size();
+#ifdef _OPENMP
+    #pragma omp parallel for
+#endif
+    for(int i = 0 ; i < s ; ++i) {
+        const auto& p = _patchmodels[i];
+        p.model->save_dists(name + "/patch" + to_s(i));
+        std::cout << "." << std::flush;
+    }
+}
+

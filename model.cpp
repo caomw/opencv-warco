@@ -257,6 +257,45 @@ void warco::PatchModel::load(std::string name)
     }
 }
 
+void warco::PatchModel::save_covs(std::string name) const
+{
+    std::ofstream of(name + ".covs");
+    if(! of)
+        throw std::runtime_error("Error creating the distance file " + name + ".covs");
+
+    for(auto& corr : _corrs) {
+        for(int i = 0 ; i < corr.rows ; ++i) {
+            for(int j = i ; j < corr.cols ; ++j) {
+                of << corr.at<float>(i,j) << " ";
+            }
+        }
+        of << std::endl;
+    }
+}
+
+void warco::PatchModel::save_dists(std::string name) const
+{
+    std::ofstream of(name + ".dists");
+    if(! of)
+        throw std::runtime_error("Error creating the distance file " + name + ".dists");
+
+    auto N = _corrs.size();
+
+    // Compute the Gram matrix first, but compute the mean in the same run,
+    // we'll need it to turn the matrix into a mercer kernel next.
+    for(unsigned i = 0 ; i < N ; ++i) {
+        for(unsigned j = 0 ; j <= i ; ++j)
+            of << (*_d)(_corrs[i], _corrs[j]) << " ";
+        for(unsigned j = i+1 ; j < N ; ++j)
+            of << 0.0f << " ";
+        of << std::endl;
+        if(i % 100 == 0) {
+            of << std::flush;
+            std::cout << "," << std::flush;
+        }
+    }
+}
+
 unsigned warco::PatchModel::predict(cv::Mat& corr) const
 {
     if(! _svm)
