@@ -46,9 +46,10 @@ namespace warco {
         svm_problem* _prob;
         double _mean;
         Distance::Ptr _d;
+        std::vector<double> _dists;
 
         void free_svm();
-        void prepare_prob(unsigned N);
+        void compute_kernel();
     };
 
 } // namespace warco

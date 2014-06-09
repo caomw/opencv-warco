@@ -31,6 +31,9 @@ if(OPENMP_FOUND)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
 endif()
 
+# For compiling libsvm in dense mode.
+add_definitions(-D_DENSE_REP)
+
 set(LIB_SRC
     cvutils.cpp
     cvutils.hpp
