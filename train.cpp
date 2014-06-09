@@ -22,6 +22,7 @@ int main(int argc, char** argv)
     auto patches = warco::readPatches(dataset);
     auto fb = cv::FilterBank(dataset["filterbank"].asCString());
     auto dfn = dataset.get("dist", "cbh").asString();
+    bool cov = dataset.get("cov", "true").asBool();
     warco::Warco model(fb, patches, dfn);
 
     std::cout << "Loading images... " << std::flush;
@@ -34,8 +35,12 @@ int main(int argc, char** argv)
     std::cout << "Training model with:" << std::endl
         << "- filterbank: " << dataset["filterbank"].asString() << std::endl
         << "- distance: " << dfn << std::endl
-        << "- #patches: " << patches.size() << std::endl;
-    model.prepare();
+        << "- #patches: " << patches.size() << std::endl
+        << "- " << (cov ? "covariances" : "correlations") << std::endl;
+
+    if(!cov)
+        model.prepare();
+
     double avg_train = model.train(C, [](){ std::cout << "." << std::flush; });
     std::cout << std::endl << "Average training score *per patch*: " << avg_train << std::endl;
 
