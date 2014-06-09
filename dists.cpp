@@ -189,11 +189,18 @@ public:
         });
 
         // I'm sure this `thingy` has a meaning.
-        cv::Mat thingy = logp_id(lA_inv_sqrt * lB * lA_inv_sqrt);
+        cv::Mat thingy = lA_inv_sqrt * lB * lA_inv_sqrt;
+
+        // This corresponds to Tr(logp_id^2(thingy))
+        double d = 0;
+        for(double l : warco::eigvals(thingy)) {
+            double logl = log(l);
+            d += logl*logl;
+        }
 
         // NOTE: the sqrt is missing in tosato's code in Y_GSVM_Train_deterministic:47
         //       (He doesn't seem to ever execute that part anyways)
-        return sqrt(trace(thingy*thingy)[0]);
+        return sqrt(d);
     }
 
     static void test()

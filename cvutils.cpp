@@ -4,6 +4,31 @@
 
 #include <opencv2/opencv.hpp>
 
+std::vector<double> warco::eigvals(const cv::Mat& m)
+{
+    std::vector<double> nrvo(m.rows);
+    cv::Mat eigvals, eigvecs;
+
+    if(! eigen(m, eigvals, eigvecs))
+        throw std::runtime_error("Cannot eigen-decompose matrix.");
+
+    unsigned i = 0;
+    switch(m.type()) {
+    case CV_32F:
+        for(auto eig = eigvals.begin<float>() ; eig != eigvals.end<float>() ; ++eig)
+            nrvo[i++] = *eig;
+        break;
+    case CV_64F:
+        for(auto eig = eigvals.begin<double>() ; eig != eigvals.end<double>() ; ++eig)
+            nrvo[i++] = *eig;
+        break;
+    default:
+        throw std::runtime_error("eigvals only works for float and double.");
+    }
+
+    return nrvo;
+}
+
 cv::Mat warco::eig_fn(const cv::Mat& m, std::function<double (double)> fn)
 {
     cv::Mat eigvals, eigvecs;
