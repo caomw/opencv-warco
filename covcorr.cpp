@@ -4,6 +4,8 @@
 
 #include <opencv2/opencv.hpp>
 
+#include <stdexcept>
+
 #include "cvutils.hpp"
 #include "features.hpp"
 
@@ -122,7 +124,7 @@ static cv::Mat cov2corr(const cv::Mat& cov)
     //sqrt(nrvo.diag(), stddev);
     auto diag = cov.diag();
     for(unsigned i = 0 ; i < stddev.size() ; ++i)
-        stddev[i] = sqrt(diag.at<float>(i));
+        stddev[i] = sqrt(std::max(diag.at<float>(i), 1e-4f));
 
     cv::Mat corr = cov.clone();
     warco::normalize_cov(corr, stddev);
