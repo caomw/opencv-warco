@@ -181,6 +181,7 @@ public:
     {
         // Weird, from both the paper and logic these should not involve logp_id,
         // but from the code, they do. I think the code is wrong.
+        // The results are also much worse if we put logp_id here.
         cv::Mat lA = corrA;
         cv::Mat lB = corrB;
 
@@ -191,10 +192,9 @@ public:
         // I'm sure this `thingy` has a meaning.
         cv::Mat thingy = lA_inv_sqrt * lB * lA_inv_sqrt;
 
-        // This corresponds to Tr(logp_id^2(thingy))
         double d = 0;
-        for(double l : warco::eigvals(thingy)) {
-            double logl = log(l);
+        for(double lambda : warco::eigvals(thingy)) {
+            double logl = log(std::max(lambda, 1e-4));
             d += logl*logl;
         }
 
